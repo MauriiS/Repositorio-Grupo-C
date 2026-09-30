@@ -1,0 +1,312 @@
+/* ---------- General ---------- */
+
+body {
+	margin: 0;
+	font-family: Georgia, "Times New Roman", serif;
+	background-color: #5ebcffbe;
+	color: #333333;
+}
+
+/* ---------- Encabezado ---------- */
+
+header {
+	background-color: #5ebcffbe;
+	text-align: center;
+	padding: 20px;
+}	
+
+header img {
+	width: 90px;
+	height: auto;
+	margin: 0;
+}
+
+header h1 {
+	margin-bottom: 5px;
+	color: #2a9099;
+}
+
+header p {
+	margin-top: 0;
+	color: #5a7c76;
+}
+
+/* ---------- Navegación ---------- */
+
+nav {
+	background-color: #6ab7b8;
+}
+
+nav ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	justify-content: center;
+	/* justify-content: 
+		space-between
+		flex-end
+		flex-start
+		space-around
+		space-evenly 
+	/ */
+	align-items: center;
+	flex-wrap: wrap;
+	/* flex-wrap: 
+		wrap
+		nowrap
+		wrap-reverse
+	/ */
+}
+
+nav li {
+	margin-top: 0;
+	margin-bottom: 0;
+	margin-left: 2.75%;
+	margin-right: 2.75%;
+}
+
+nav a {
+	display: block;
+	padding: 15px 20px;
+
+	color: white;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+nav a:hover {
+	background-color: #4b9c9d;
+}
+
+/* ---------- Contenido ---------- */
+
+main {
+	max-width: 900px;
+	margin: auto;
+	padding: 30px;
+}
+
+section {
+	margin-bottom: 55px;
+}
+
+article {
+	background-color: rgb(255, 255, 255);
+	border-style: solid;
+	border-width: 1px;
+	border-color: #cfdede;
+	border-radius: 6px;
+	padding: 15px;
+	margin-bottom: 15px;
+}
+
+article h3 {
+	margin-top: 0;
+	color: #5e89ffd7;
+}
+
+tr {
+	text-align: center;
+}
+
+/* ---------- Pie ---------- */
+
+footer {
+	background-color: #7c7a7ade;
+	text-align: center;
+	padding: 15px;
+	margin-top: 40px;
+}
+
+/* ---------- Hito 3: elementos dinámicos ---------- */
+
+/* Evita que se vean los links de todos los roles antes de que cargue el JS */
+.empleado,
+.tecnico,
+.gerente {
+	display: none;
+}
+
+#usuario-conectado {
+	display: block;
+	padding: 15px 20px;
+	color: #ffffff;
+	font-style: italic;
+}
+
+a {
+	color: #2a6f99;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: #ffffff;
+}
+
+th,
+td {
+	border: 1px solid #cfdede;
+	padding: 8px;
+}
+
+th {
+	background-color: #6ab7b8;
+	color: #ffffff;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+	width: 100%;
+	max-width: 400px;
+	padding: 6px;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+textarea {
+	min-height: 80px;
+}
+
+button,
+input[type="submit"] {
+	padding: 8px 14px;
+	border: none;
+	border-radius: 4px;
+	background-color: #2a9099;
+	color: #ffffff;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+button:hover,
+input[type="submit"]:hover {
+	background-color: #4b9c9d;
+}
+
+button:disabled,
+input[type="submit"]:disabled {
+	background-color: #999999;
+	cursor: not-allowed;
+}
+
+.form-inline {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-top: 10px;
+}
+
+.form-inline input[type="text"] {
+	flex: 1;
+}
+
+.aviso {
+	background-color: #fff4d6;
+	border-color: #e0b84a;
+}
+
+.notificacion {
+	background-color: #e3f6ea;
+	border-color: #58b07a;
+}
+
+.notificacion button {
+	margin-left: 10px;
+	padding: 4px 8px;
+}
+
+.mensaje-error {
+	color: #b3261e;
+	font-weight: bold;
+}
+
+.mensaje-ok {
+	color: #2e7d32;
+	font-weight: bold;
+}
+
+.estado,
+.prioridad {
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 0.9em;
+	color: #ffffff;
+	background-color: #777777;
+}
+
+.estado-abierto { background-color: #1e88e5; }
+.estado-asignado { background-color: #8e24aa; }
+.estado-en-progreso { background-color: #fb8c00; }
+.estado-esperando-repuesto { background-color: #6d4c41; }
+.estado-cerrado { background-color: #43a047; }
+
+.prioridad-alta { background-color: #c62828; }
+.prioridad-media { background-color: #f9a825; }
+.prioridad-baja { background-color: #558b2f; }
+
+.indicadores {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px;
+}
+
+.indicador {
+	flex: 1;
+	min-width: 150px;
+	text-align: center;
+}
+
+.indicador .numero {
+	font-size: 2em;
+	font-weight: bold;
+	margin: 0;
+}
+
+/* ---------- Modo oscuro forzado para técnicos ---------- */
+
+body.modo-oscuro {
+	background-color: #121212;
+	color: #e0e0e0;
+	font-family: "Courier New", Consolas, monospace;
+}
+
+body.modo-oscuro header,
+body.modo-oscuro nav,
+body.modo-oscuro footer {
+	background-color: #1f1f1f;
+}
+
+body.modo-oscuro header h1,
+body.modo-oscuro article h3 {
+	color: #4dd0e1;
+}
+
+body.modo-oscuro header p,
+body.modo-oscuro footer {
+	color: #b0b0b0;
+}
+
+body.modo-oscuro article,
+body.modo-oscuro table {
+	background-color: #1e1e1e;
+	border-color: #333333;
+	color: #e0e0e0;
+}
+
+body.modo-oscuro input,
+body.modo-oscuro select,
+body.modo-oscuro textarea {
+	background-color: #2a2a2a;
+	color: #e0e0e0;
+	border: 1px solid #444444;
+}
+
+body.modo-oscuro a {
+	color: #80deea;
+}

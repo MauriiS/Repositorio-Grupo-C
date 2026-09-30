@@ -1,0 +1,155 @@
+{
+	"usuarios": [
+		{
+			"id": 1,
+			"nombre": "Santino Vignolo",
+			"email": "santino@rutarapida.com",
+			"password": "1234",
+			"rol": "empleado",
+			"area": "Logística"
+		},
+		{
+			"id": 2,
+			"nombre": "Martina Orzusa",
+			"email": "martina@rutarapida.com",
+			"password": "1234",
+			"rol": "empleado",
+			"area": "Administración"
+		},
+		{
+			"id": 3,
+			"nombre": "Lucas Desia",
+			"email": "lucas@rutarapida.com",
+			"password": "1234",
+			"rol": "tecnico",
+			"nivel": "Senior"
+		},
+		{
+			"id": 4,
+			"nombre": "Milagros Ibarra",
+			"email": "milagros@rutarapida.com",
+			"password": "1234",
+			"rol": "tecnico",
+			"nivel": "Junior"
+		},
+		{
+			"id": 5,
+			"nombre": "Mauricio Sanchez",
+			"email": "mauricio@rutarapida.com",
+			"password": "1234",
+			"rol": "gerente"
+		},
+		{
+			"id": 6,
+			"nombre": "Cintia Gomez",
+			"email": "cintia@rutarapida.com",
+			"password": "1234",
+			"rol": "gerente"
+		}
+	],
+	"categorias": [
+		{
+			"id": 1,
+			"nombre": "Falla de Hardware",
+			"descripcion": "Equipos que no encienden, periféricos rotos o desperfectos en terminales de depósito."
+		},
+		{
+			"id": 2,
+			"nombre": "Acceso a Sistemas",
+			"descripcion": "Bloqueos de contraseña, usuarios deshabilitados o falta de permisos."
+		},
+		{
+			"id": 3,
+			"nombre": "Redes",
+			"descripcion": "Sin conexión a internet, VPN caída o problemas con la red interna."
+		}
+	],
+	"estados": ["Abierto", "Asignado", "En Progreso", "Esperando Repuesto", "Cerrado"],
+	"palabrasClavePrioridad": {
+		"Alta": ["no enciende", "caído", "caida", "urgente", "bloqueado", "sin conexión", "servidor"],
+		"Media": ["lento", "contraseña", "error", "impresora", "vpn"]
+	},
+	"palabrasConfidenciales": ["recibo de sueldo", "liquidación", "liquidacion"],
+	"avisoMantenimiento": {
+		"activo": true,
+		"mensaje": "El sistema de facturación estará en mantenimiento programado el sábado de 08:00 a 12:00 hs. No es necesario generar tickets por este motivo."
+	},
+	"tickets": [
+		{
+			"id": 1001,
+			"empleadoId": 1,
+			"tecnicoId": 3,
+			"categoriaId": 1,
+			"titulo": "La PC no enciende",
+			"descripcion": "El equipo del depósito 2 no enciende desde esta mañana.",
+			"prioridad": "Alta",
+			"estado": "En Progreso",
+			"fecha": "2026-09-20T09:15:00",
+			"comentarios": [
+				{
+					"autorId": 1,
+					"texto": "Probé con otro enchufe y sigue igual.",
+					"fecha": "2026-09-20T10:02:00"
+				}
+			]
+		},
+		{
+			"id": 1002,
+			"empleadoId": 1,
+			"tecnicoId": 4,
+			"categoriaId": 3,
+			"titulo": "Internet lento en el depósito",
+			"descripcion": "La conexión en el sector de carga está muy lenta.",
+			"prioridad": "Media",
+			"estado": "Cerrado",
+			"fecha": "2026-09-10T11:30:00",
+			"comentarios": []
+		},
+		{
+			"id": 1003,
+			"empleadoId": 2,
+			"tecnicoId": null,
+			"categoriaId": 2,
+			"titulo": "Contraseña bloqueada",
+			"descripcion": "No puedo ingresar al sistema de gestión, me pide cambiar la contraseña.",
+			"prioridad": "Media",
+			"estado": "Abierto",
+			"fecha": "2026-09-22T09:00:00",
+			"comentarios": []
+		},
+		{
+			"id": 1004,
+			"empleadoId": 2,
+			"tecnicoId": 3,
+			"categoriaId": 2,
+			"titulo": "No puedo ver mi recibo de sueldo",
+			"descripcion": "Al abrir el recibo de sueldo de agosto el portal de RRHH muestra un error.",
+			"prioridad": "Media",
+			"estado": "Asignado",
+			"fecha": "2026-09-23T14:45:00",
+			"comentarios": []
+		},
+		{
+			"id": 1005,
+			"empleadoId": 2,
+			"tecnicoId": 4,
+			"categoriaId": 1,
+			"titulo": "Mouse roto",
+			"descripcion": "El mouse de mi puesto dejó de funcionar.",
+			"prioridad": "Baja",
+			"estado": "Cerrado",
+			"fecha": "2026-09-05T08:20:00",
+			"comentarios": []
+		}
+	],
+	"notificaciones": [
+		{
+			"id": 1,
+			"empleadoId": 1,
+			"ticketId": 1001,
+			"mensaje": "Por favor deje el equipo encendido para que podamos revisarlo.",
+			"fecha": "2026-09-20T10:30:00",
+			"leida": false
+		}
+	]
+}
