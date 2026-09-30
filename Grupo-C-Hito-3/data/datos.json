@@ -51,25 +51,109 @@
 		{
 			"id": 1,
 			"nombre": "Falla de Hardware",
-			"descripcion": "Equipos que no encienden, periféricos rotos o desperfectos en terminales de depósito."
+			"descripcion": "Equipos que no encienden, periféricos rotos o desperfectos en terminales de depósito.",
+			"placeholderTitulo": "Ej: La PC no enciende",
+			"placeholderDescripcion": "Contá qué equipo falla, desde cuándo y qué probaste.",
+			"pideEquipo": true
 		},
 		{
 			"id": 2,
 			"nombre": "Acceso a Sistemas",
-			"descripcion": "Bloqueos de contraseña, usuarios deshabilitados o falta de permisos."
+			"descripcion": "Bloqueos de contraseña, usuarios deshabilitados o falta de permisos.",
+			"placeholderTitulo": "Ej: Contraseña bloqueada en el sistema de gestión",
+			"placeholderDescripcion": "Indicá a qué sistema no podés acceder y qué mensaje aparece.",
+			"pideEquipo": false
 		},
 		{
 			"id": 3,
 			"nombre": "Redes",
-			"descripcion": "Sin conexión a internet, VPN caída o problemas con la red interna."
+			"descripcion": "Sin conexión a internet, VPN caída o problemas con la red interna.",
+			"placeholderTitulo": "Ej: Sin conexión en el depósito 2",
+			"placeholderDescripcion": "Indicá el sector afectado y si le pasa a más personas.",
+			"pideEquipo": false
 		}
 	],
-	"estados": ["Abierto", "Asignado", "En Progreso", "Esperando Repuesto", "Cerrado"],
+	"equipos": [
+		{
+			"id": 1,
+			"nombre": "Notebook Lenovo ThinkPad",
+			"modelo": "E14 Gen 5",
+			"tipo": "Hardware",
+			"homologado": true
+		},
+		{
+			"id": 2,
+			"nombre": "PC de escritorio Dell",
+			"modelo": "OptiPlex 7010",
+			"tipo": "Hardware",
+			"homologado": true
+		},
+		{
+			"id": 3,
+			"nombre": "Terminal portátil Zebra",
+			"modelo": "MC3300",
+			"tipo": "Hardware",
+			"homologado": true
+		},
+		{
+			"id": 4,
+			"nombre": "Impresora HP LaserJet",
+			"modelo": "M404dn",
+			"tipo": "Hardware",
+			"homologado": false
+		},
+		{
+			"id": 5,
+			"nombre": "Windows",
+			"modelo": "11 Pro 23H2",
+			"tipo": "Software",
+			"homologado": true
+		},
+		{
+			"id": 6,
+			"nombre": "Sistema de gestión logística",
+			"modelo": "v4.2",
+			"tipo": "Software",
+			"homologado": true
+		},
+		{
+			"id": 7,
+			"nombre": "Microsoft Office",
+			"modelo": "2019",
+			"tipo": "Software",
+			"homologado": false
+		}
+	],
+	"estados": [
+		"Abierto",
+		"Asignado",
+		"En Progreso",
+		"Esperando Repuesto",
+		"Cerrado"
+	],
 	"palabrasClavePrioridad": {
-		"Alta": ["no enciende", "caído", "caida", "urgente", "bloqueado", "sin conexión", "servidor"],
-		"Media": ["lento", "contraseña", "error", "impresora", "vpn"]
+		"Alta": [
+			"no enciende",
+			"caído",
+			"caida",
+			"urgente",
+			"bloqueado",
+			"sin conexión",
+			"servidor"
+		],
+		"Media": [
+			"lento",
+			"contraseña",
+			"error",
+			"impresora",
+			"vpn"
+		]
 	},
-	"palabrasConfidenciales": ["recibo de sueldo", "liquidación", "liquidacion"],
+	"palabrasConfidenciales": [
+		"recibo de sueldo",
+		"liquidación",
+		"liquidacion"
+	],
 	"avisoMantenimiento": {
 		"activo": true,
 		"mensaje": "El sistema de facturación estará en mantenimiento programado el sábado de 08:00 a 12:00 hs. No es necesario generar tickets por este motivo."
@@ -91,7 +175,8 @@
 					"texto": "Probé con otro enchufe y sigue igual.",
 					"fecha": "2026-09-20T10:02:00"
 				}
-			]
+			],
+			"equipoId": 2
 		},
 		{
 			"id": 1002,
@@ -103,7 +188,8 @@
 			"prioridad": "Media",
 			"estado": "Cerrado",
 			"fecha": "2026-09-10T11:30:00",
-			"comentarios": []
+			"comentarios": [],
+			"equipoId": null
 		},
 		{
 			"id": 1003,
@@ -115,7 +201,8 @@
 			"prioridad": "Media",
 			"estado": "Abierto",
 			"fecha": "2026-09-22T09:00:00",
-			"comentarios": []
+			"comentarios": [],
+			"equipoId": null
 		},
 		{
 			"id": 1004,
@@ -127,7 +214,8 @@
 			"prioridad": "Media",
 			"estado": "Asignado",
 			"fecha": "2026-09-23T14:45:00",
-			"comentarios": []
+			"comentarios": [],
+			"equipoId": null
 		},
 		{
 			"id": 1005,
@@ -139,7 +227,8 @@
 			"prioridad": "Baja",
 			"estado": "Cerrado",
 			"fecha": "2026-09-05T08:20:00",
-			"comentarios": []
+			"comentarios": [],
+			"equipoId": 1
 		}
 	],
 	"notificaciones": [

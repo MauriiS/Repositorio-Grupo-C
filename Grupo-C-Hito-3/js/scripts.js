@@ -160,6 +160,37 @@ function crearEtiquetaPrioridad(prioridad) {
 	return crearElemento("span", prioridad, "prioridad prioridad-" + prioridad.toLowerCase());
 }
 
+
+// Tarjeta de ticket reutilizada en historial, panel del técnico y tablero
+function crearTarjetaTicket(datos, ticket, usuario, campos) {
+	const article = document.createElement("article");
+	article.className = "ticket ticket-" + ticket.prioridad.toLowerCase();
+
+	const encabezado = crearElemento("div", undefined, "ticket-encabezado");
+	const titulo = textoVisible(datos, ticket, "titulo", usuario);
+	const h3 = crearElemento("h3", `#${ticket.id} · ${titulo}`);
+	if (titulo !== ticket.titulo) h3.classList.add("confidencial");
+
+	const insignias = crearElemento("div", undefined, "ticket-insignias");
+	insignias.append(crearEtiquetaPrioridad(ticket.prioridad), crearEtiquetaEstado(ticket.estado));
+	encabezado.append(h3, insignias);
+
+	const cuerpo = crearElemento("div", undefined, "ticket-datos");
+	campos.forEach(([etiqueta, valor]) => cuerpo.append(crearParrafoDato(etiqueta, valor)));
+
+	article.append(encabezado, cuerpo);
+	return article;
+}
+
+function crearComentario(datos, comentario) {
+	const div = crearElemento("div", undefined, "comentario");
+	div.append(
+		crearElemento("small", `${nombreUsuario(datos, comentario.autorId)} · ${formatearFecha(comentario.fecha)}`),
+		comentario.texto
+	);
+	return div;
+}
+
 // ============================================================
 // NAVEGACIÓN SEGÚN ROL
 // ============================================================
@@ -175,9 +206,17 @@ function renderizarNavBar(usuario) {
 		elemento.style.display = "list-item";
 	});
 
+	// Marca el link de la página actual
+	document.querySelectorAll("nav a").forEach(link => {
+		if (link.getAttribute("href").endsWith(paginaActual())) {
+			link.classList.add("activo");
+		}
+	});
+
 	const usuarioNav = document.querySelector("#usuario-conectado");
-	if (usuarioNav) {
-		usuarioNav.textContent = usuario ? `${usuario.nombre} (${usuario.rol})` : "";
+	if (usuarioNav && usuario) {
+		const roles = { empleado: "Empleado", tecnico: "Técnico", gerente: "Gerente de TI" };
+		usuarioNav.textContent = `${usuario.nombre} · ${roles[usuario.rol]}`;
 	}
 
 	const botonSalir = document.querySelector("#cerrar-sesion");
@@ -218,18 +257,18 @@ function controlarAcceso(usuario) {
 
 const SERVICIOS_POR_ROL = {
 	visitante: [
-		{ titulo: "Iniciar sesión", descripcion: "Ingrese con su usuario corporativo para acceder al portal.", url: "pages/login.html" }
+		{ titulo: "Iniciar sesión", descripcion: "Ingresá con tu usuario corporativo para acceder al portal.", url: "pages/login.html" }
 	],
 	empleado: [
-		{ titulo: "Solicitar un ticket", descripcion: "Solicite un ticket con la categoría y el problema a resolver.", url: "pages/solicitar-ticket.html" },
-		{ titulo: "Consultar mis tickets", descripcion: "Visualice el estado de sus tickets activos y agregue comentarios.", url: "pages/mis-tickets.html" },
-		{ titulo: "Historial de tickets", descripcion: "Consulte el historial de sus tickets ya cerrados.", url: "pages/historial.html" }
+		{ titulo: "Nuevo ticket", descripcion: "Reportá un problema eligiendo la categoría y describiendo la falla.", url: "pages/solicitar-ticket.html" },
+		{ titulo: "Mis tickets", descripcion: "Seguí el estado de tus tickets activos y agregá comentarios.", url: "pages/mis-tickets.html" },
+		{ titulo: "Historial", descripcion: "Consultá tus tickets ya cerrados.", url: "pages/historial.html" }
 	],
 	tecnico: [
-		{ titulo: "Panel de tickets", descripcion: "Gestione los tickets entrantes ordenados por urgencia.", url: "pages/panel-tecnico.html" }
+		{ titulo: "Panel de tickets", descripcion: "Tickets entrantes por urgencia, cambio de estado, avisos y equipos homologados.", url: "pages/panel-tecnico.html" }
 	],
 	gerente: [
-		{ titulo: "Tablero de control", descripcion: "Estadísticas, carga por técnico e incidentes críticos.", url: "pages/tablero.html" }
+		{ titulo: "Tablero de control", descripcion: "Estadísticas, carga por técnico, incidentes críticos e información confidencial.", url: "pages/tablero.html" }
 	]
 };
 
@@ -239,16 +278,17 @@ async function renderizarPageHome(usuario) {
 
 	const datos = await obtenerDatosGlobales();
 
-	const bienvenida = document.querySelector("#bienvenida");
-	bienvenida.textContent = usuario
-		? `Bienvenido/a, ${usuario.nombre}`
-		: "Bienvenido/a al Portal de TechSolve";
+	document.querySelector("#bienvenida").textContent = usuario
+		? `Hola, ${usuario.nombre.split(" ")[0]}`
+		: "Bienvenido/a a TechSolve";
 
 	// Aviso de mantenimiento programado
 	const aviso = document.querySelector("#aviso-mantenimiento");
 	if (usuario && datos.avisoMantenimiento.activo) {
-		aviso.append(crearElemento("h3", "Mantenimiento programado"));
-		aviso.append(crearElemento("p", datos.avisoMantenimiento.mensaje));
+		aviso.append(
+			crearElemento("h3", "⚠ Mantenimiento programado"),
+			crearElemento("p", datos.avisoMantenimiento.mensaje)
+		);
 		aviso.hidden = false;
 	}
 
@@ -257,24 +297,21 @@ async function renderizarPageHome(usuario) {
 		renderizarNotificaciones(datos, usuario);
 	}
 
+	// Servicios según el rol
+	const servicios = SERVICIOS_POR_ROL[usuario ? usuario.rol : "visitante"];
+	servicios.forEach(servicio => {
+		const link = crearElemento("a", undefined, "tarjeta tarjeta-link");
+		link.href = servicio.url;
+		link.append(crearElemento("h3", servicio.titulo + " →"), crearElemento("p", servicio.descripcion));
+		listaServicios.append(link);
+	});
+
 	// Categorías de soporte
 	const listaCategorias = document.querySelector("#lista-categorias");
 	datos.categorias.forEach(categoria => {
 		const li = document.createElement("li");
-		li.append(crearElemento("strong", categoria.nombre + ": "), categoria.descripcion);
+		li.append(crearElemento("strong", categoria.nombre), categoria.descripcion);
 		listaCategorias.append(li);
-	});
-
-	// Servicios según el rol
-	const servicios = SERVICIOS_POR_ROL[usuario ? usuario.rol : "visitante"];
-	servicios.forEach(servicio => {
-		const article = document.createElement("article");
-		const link = crearElemento("a", servicio.titulo);
-		link.href = servicio.url;
-		const h3 = document.createElement("h3");
-		h3.append(link);
-		article.append(h3, crearElemento("p", servicio.descripcion));
-		listaServicios.append(article);
 	});
 }
 
@@ -286,24 +323,21 @@ function renderizarNotificaciones(datos, usuario) {
 	contenedor.append(crearElemento("h3", "Mensajes del soporte técnico"));
 
 	pendientes.forEach(notificacion => {
-		const p = document.createElement("p");
-		p.append(
-			crearElemento("strong", `Ticket #${notificacion.ticketId}: `),
-			notificacion.mensaje + " "
-		);
+		const item = crearElemento("div", undefined, "notificacion-item");
+		const texto = document.createElement("p");
+		texto.append(crearElemento("strong", `Ticket #${notificacion.ticketId}: `), notificacion.mensaje);
 
-		const boton = crearElemento("button", "Marcar como leído");
+		const boton = crearElemento("button", "Marcar como leído", "boton boton-secundario boton-chico");
 		boton.type = "button";
 		boton.addEventListener("click", () => {
-			const original = buscarPorId(datos.notificaciones, notificacion.id);
-			original.leida = true;
+			buscarPorId(datos.notificaciones, notificacion.id).leida = true;
 			guardarDatosGlobales(datos);
-			p.remove();
-			if (contenedor.querySelectorAll("p").length === 0) contenedor.hidden = true;
+			item.remove();
+			if (!contenedor.querySelector(".notificacion-item")) contenedor.hidden = true;
 		});
 
-		p.append(boton);
-		contenedor.append(p);
+		item.append(texto, boton);
+		contenedor.append(item);
 	});
 
 	contenedor.hidden = false;
@@ -319,18 +353,30 @@ async function renderizarPageLogin() {
 
 	const datos = await obtenerDatosGlobales();
 	const mensaje = document.querySelector("#mensaje-login");
+	const inputEmail = document.querySelector("#email");
+	const inputPassword = document.querySelector("#password");
 
 	// Usuarios de prueba generados desde datos.json
 	const listaDemo = document.querySelector("#usuarios-demo");
 	datos.usuarios.forEach(usuario => {
-		listaDemo.append(crearElemento("li", `${usuario.email} — ${usuario.rol}`));
+		const boton = crearElemento("button", undefined, "boton");
+		boton.type = "button";
+		boton.append(crearElemento("span", usuario.email), crearElemento("span", usuario.rol, "insignia"));
+		boton.addEventListener("click", () => {
+			inputEmail.value = usuario.email;
+			inputPassword.value = usuario.password;
+			inputPassword.focus();
+		});
+		const li = document.createElement("li");
+		li.append(boton);
+		listaDemo.append(li);
 	});
 
 	formulario.addEventListener("submit", event => {
 		event.preventDefault();
 
-		const email = document.querySelector("#email").value.trim().toLowerCase();
-		const password = document.querySelector("#password").value;
+		const email = inputEmail.value.trim().toLowerCase();
+		const password = inputPassword.value;
 
 		const usuario = datos.usuarios.find(u => u.email === email && u.password === password);
 
@@ -347,7 +393,8 @@ async function renderizarPageLogin() {
 }
 
 // ============================================================
-// PÁGINA: SOLICITAR TICKET (empleado)
+// PÁGINA: NUEVO TICKET (empleado)
+// Sigue el caso de uso "Crear Ticket de Soporte"
 // ============================================================
 
 async function renderizarPageSolicitarTicket(usuario) {
@@ -355,43 +402,104 @@ async function renderizarPageSolicitarTicket(usuario) {
 	if (!formulario) return;
 
 	const datos = await obtenerDatosGlobales();
+	const pasoCategoria = document.querySelector("#paso-categoria");
+
+	// Flujo alternativo A1: el empleado ya tiene 3 tickets abiertos
+	const abiertos = datos.tickets.filter(t => t.empleadoId === usuario.id && t.estado === "Abierto");
+	if (abiertos.length >= MAX_TICKETS_ABIERTOS) {
+		document.querySelector("#texto-limite").textContent =
+			`Ya tenés ${abiertos.length} tickets con estado "Abierto". Resolvé los tickets existentes antes de abrir uno nuevo.`;
+		document.querySelector("#mensaje-limite").hidden = false;
+		pasoCategoria.hidden = true;
+		return;
+	}
 
 	document.querySelector("#nombre").value = usuario.nombre;
 
-	const selectCategoria = document.querySelector("#categoria");
+	const inputCategoria = document.createElement("input");
+	inputCategoria.type = "hidden";
+	formulario.append(inputCategoria);
+
+	// Paso 2: el sistema presenta las categorías disponibles
+	const opciones = document.querySelector("#opciones-categoria");
 	datos.categorias.forEach(categoria => {
-		const option = crearElemento("option", categoria.nombre);
-		option.value = categoria.id;
-		selectCategoria.append(option);
+		const boton = crearElemento("button", undefined, "opcion-categoria");
+		boton.type = "button";
+		boton.append(crearElemento("strong", categoria.nombre), crearElemento("span", categoria.descripcion));
+		boton.addEventListener("click", () => elegirCategoria(categoria));
+		opciones.append(boton);
 	});
 
-	// Muestra la prioridad calculada mientras se escribe el título
+	// Equipos homologados para las fallas de hardware
+	const selectEquipo = document.querySelector("#equipo");
+	datos.equipos
+		.filter(equipo => equipo.tipo === "Hardware")
+		.forEach(equipo => {
+			const option = crearElemento("option", `${equipo.nombre} (${equipo.modelo})`);
+			option.value = equipo.id;
+			selectEquipo.append(option);
+		});
+
 	const inputTitulo = document.querySelector("#titulo");
+	const inputDescripcion = document.querySelector("#descripcion");
+	const campoEquipo = document.querySelector("#campo-equipo");
+
+	// Paso 3 y 4: al elegir la categoría se muestra su formulario
+	function elegirCategoria(categoria) {
+		inputCategoria.value = categoria.id;
+		document.querySelector("#categoria-elegida").textContent = categoria.nombre;
+		document.querySelector("#ayuda-categoria").textContent = categoria.descripcion;
+		inputTitulo.placeholder = categoria.placeholderTitulo || "";
+		inputDescripcion.placeholder = categoria.placeholderDescripcion || "";
+		campoEquipo.hidden = !categoria.pideEquipo;
+
+		pasoCategoria.hidden = true;
+		formulario.hidden = false;
+		marcarPaso(2);
+		inputTitulo.focus();
+	}
+
+	document.querySelector("#cambiar-categoria").addEventListener("click", () => {
+		formulario.hidden = true;
+		pasoCategoria.hidden = false;
+		marcarPaso(1);
+	});
+
+	// Paso 6: prioridad asignada automáticamente según el título
 	const prioridadCalculada = document.querySelector("#prioridad-calculada");
 	inputTitulo.addEventListener("input", () => {
-		prioridadCalculada.textContent = inputTitulo.value
-			? calcularPrioridad(datos, inputTitulo.value)
-			: "-";
+		if (!inputTitulo.value.trim()) {
+			prioridadCalculada.textContent = "Escribí un título";
+			prioridadCalculada.className = "insignia";
+			return;
+		}
+		const prioridad = calcularPrioridad(datos, inputTitulo.value);
+		prioridadCalculada.textContent = prioridad;
+		prioridadCalculada.className = "prioridad prioridad-" + prioridad.toLowerCase();
+	});
+
+	// Flujo alternativo A0: cancelación
+	document.querySelector("#cancelar-ticket").addEventListener("click", () => {
+		formulario.reset();
+		window.location.href = resolverUrlRelativa("index.html");
 	});
 
 	const mensaje = document.querySelector("#mensaje-ticket");
-	const abiertos = datos.tickets.filter(t => t.empleadoId === usuario.id && t.estado === "Abierto");
 
-	if (abiertos.length >= MAX_TICKETS_ABIERTOS) {
-		mensaje.textContent = `Ya tiene ${MAX_TICKETS_ABIERTOS} tickets abiertos. Debe resolver los tickets existentes antes de abrir uno nuevo.`;
-		formulario.querySelector("[type=submit]").disabled = true;
-	}
-
+	// Paso 7 y 8: confirmación y registro del ticket
 	formulario.addEventListener("submit", event => {
 		event.preventDefault();
 
 		const titulo = inputTitulo.value.trim();
-		const descripcion = document.querySelector("#descripcion").value.trim();
+		const descripcion = inputDescripcion.value.trim();
 
 		if (!titulo || !descripcion) {
-			mensaje.textContent = "Complete el título y la descripción.";
+			mensaje.textContent = "Completá el título y la descripción.";
 			return;
 		}
+
+		mensaje.textContent = "";
+		const categoria = buscarPorId(datos.categorias, Number(inputCategoria.value));
 
 		const nuevoId = Math.max(...datos.tickets.map(t => t.id), 1000) + 1;
 
@@ -399,24 +507,40 @@ async function renderizarPageSolicitarTicket(usuario) {
 			id: nuevoId,
 			empleadoId: usuario.id,
 			tecnicoId: null,
-			categoriaId: Number(selectCategoria.value),
+			categoriaId: categoria.id,
 			titulo: titulo,
 			descripcion: descripcion,
 			prioridad: calcularPrioridad(datos, titulo),
 			estado: "Abierto",
 			fecha: new Date().toISOString(),
-			comentarios: []
+			comentarios: [],
+			equipoId: categoria.pideEquipo ? Number(selectEquipo.value) : null
 		};
 
-		datos.tickets.push(nuevoTicket);
-		guardarDatosGlobales(datos);
+		// Indicador de carga mientras se registra (flujo alternativo A2)
+		document.querySelector("#cargando").hidden = false;
+		formulario.querySelectorAll("button").forEach(boton => {
+			boton.disabled = true;
+		});
 
-		window.location.href = resolverUrlRelativa(`pages/confirmacion.html?id=${nuevoId}`);
+		setTimeout(() => {
+			datos.tickets.push(nuevoTicket);
+			guardarDatosGlobales(datos);
+			window.location.href = resolverUrlRelativa(`pages/confirmacion.html?id=${nuevoId}`);
+		}, 700);
+	});
+}
+
+function marcarPaso(numero) {
+	[1, 2, 3].forEach(paso => {
+		const li = document.querySelector(`#paso-${paso}`);
+		li.classList.toggle("activo", paso === numero);
+		li.classList.toggle("hecho", paso < numero);
 	});
 }
 
 // ============================================================
-// PÁGINA: CONFIRMACIÓN
+// PÁGINA: CONFIRMACIÓN (comprobante digital)
 // ============================================================
 
 async function renderizarPageConfirmacion(usuario) {
@@ -428,18 +552,33 @@ async function renderizarPageConfirmacion(usuario) {
 	const ticket = datos.tickets.find(t => t.id === id && t.empleadoId === usuario.id);
 
 	if (!ticket) {
-		contenedor.append(crearElemento("p", "No se encontró el ticket solicitado."));
+		contenedor.append(crearElemento("p", "No se encontró el ticket solicitado.", "mensaje-error"));
 		return;
 	}
 
 	contenedor.append(
-		crearParrafoDato("Número de seguimiento", ticket.id),
-		crearParrafoDato("Categoría", nombreCategoria(datos, ticket.categoriaId)),
-		crearParrafoDato("Título", ticket.titulo),
-		crearParrafoDato("Prioridad asignada", ticket.prioridad),
-		crearParrafoDato("Estado", ticket.estado),
-		crearParrafoDato("Fecha", formatearFecha(ticket.fecha))
+		crearElemento("p", "Número de seguimiento", "texto-suave"),
+		crearElemento("p", `#${ticket.id}`, "numero-seguimiento")
 	);
+
+	const lista = crearElemento("ul", undefined, "datos-comprobante");
+	const filas = [
+		["Categoría", nombreCategoria(datos, ticket.categoriaId)],
+		["Título", ticket.titulo],
+		["Prioridad", crearEtiquetaPrioridad(ticket.prioridad)],
+		["Estado", crearEtiquetaEstado(ticket.estado)],
+		["Fecha", formatearFecha(ticket.fecha)]
+	];
+	if (ticket.equipoId) {
+		const equipo = buscarPorId(datos.equipos, ticket.equipoId);
+		filas.splice(1, 0, ["Equipo", equipo ? equipo.nombre : "-"]);
+	}
+	filas.forEach(([etiqueta, valor]) => {
+		const li = document.createElement("li");
+		li.append(crearElemento("span", etiqueta), valor instanceof Node ? valor : crearElemento("span", valor));
+		lista.append(li);
+	});
+	contenedor.append(lista);
 }
 
 // ============================================================
@@ -458,18 +597,18 @@ async function renderizarPageMisTickets(usuario) {
 		.filter(t => t.empleadoId === usuario.id && t.estado !== "Cerrado")
 		.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-	tabla.append(crearFilaTabla(["ID", "Categoría", "Título", "Prioridad", "Estado", "Técnico"], true));
-
 	if (activos.length === 0) {
 		document.querySelector("#sin-tickets").hidden = false;
-		tabla.hidden = true;
+		tabla.parentElement.hidden = true;
 		document.querySelector("#form-comentario").hidden = true;
 		return;
 	}
 
+	tabla.append(crearFilaTabla(["ID", "Categoría", "Título", "Prioridad", "Estado", "Técnico"], true));
+
 	activos.forEach(ticket => {
 		tabla.append(crearFilaTabla([
-			ticket.id,
+			`#${ticket.id}`,
 			nombreCategoria(datos, ticket.categoriaId),
 			ticket.titulo,
 			crearEtiquetaPrioridad(ticket.prioridad),
@@ -480,31 +619,32 @@ async function renderizarPageMisTickets(usuario) {
 
 	// Comentarios de cada ticket
 	const listaComentarios = document.querySelector("#lista-comentarios");
-	activos.forEach(ticket => {
-		if (ticket.comentarios.length === 0) return;
-
-		const article = document.createElement("article");
-		article.append(crearElemento("h3", `Ticket #${ticket.id} — ${ticket.titulo}`));
-		ticket.comentarios.forEach(comentario => {
-			article.append(crearParrafoDato(
-				`${nombreUsuario(datos, comentario.autorId)} (${formatearFecha(comentario.fecha)})`,
-				comentario.texto
-			));
+	activos
+		.filter(ticket => ticket.comentarios.length > 0)
+		.forEach(ticket => {
+			const article = crearElemento("article");
+			article.style.marginBottom = "14px";
+			article.append(crearElemento("h3", `#${ticket.id} · ${ticket.titulo}`));
+			ticket.comentarios.forEach(comentario => article.append(crearComentario(datos, comentario)));
+			listaComentarios.append(article);
 		});
-		listaComentarios.append(article);
-	});
 
 	// Formulario para agregar comentarios
 	const selectTicket = document.querySelector("#ticket-comentario");
 	activos
 		.filter(t => ESTADOS_COMENTABLES.includes(t.estado))
 		.forEach(ticket => {
-			const option = crearElemento("option", `#${ticket.id} — ${ticket.titulo}`);
+			const option = crearElemento("option", `#${ticket.id} · ${ticket.titulo}`);
 			option.value = ticket.id;
 			selectTicket.append(option);
 		});
 
 	const formulario = document.querySelector("#form-comentario");
+	if (selectTicket.options.length === 0) {
+		formulario.hidden = true;
+		return;
+	}
+
 	formulario.addEventListener("submit", event => {
 		event.preventDefault();
 
@@ -538,23 +678,17 @@ async function renderizarPageHistorial(usuario) {
 		.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
 	if (cerrados.length === 0) {
-		lista.append(crearElemento("p", "No se registran tickets para este usuario."));
+		lista.append(crearElemento("p", "No se registran tickets para este usuario.", "alerta tarjeta"));
 		return;
 	}
 
 	cerrados.forEach(ticket => {
-		const article = document.createElement("article");
-		article.append(
-			crearElemento("h3", `ID Ticket: ${ticket.id}`),
-			crearParrafoDato("Categoría", nombreCategoria(datos, ticket.categoriaId)),
-			crearParrafoDato("Título", ticket.titulo),
-			crearParrafoDato("Descripción", ticket.descripcion),
-			crearParrafoDato("Prioridad", ticket.prioridad),
-			crearParrafoDato("Técnico", nombreUsuario(datos, ticket.tecnicoId)),
-			crearParrafoDato("Fecha", formatearFecha(ticket.fecha)),
-			crearParrafoDato("Estado actual", ticket.estado)
-		);
-		lista.append(article);
+		lista.append(crearTarjetaTicket(datos, ticket, usuario, [
+			["Categoría", nombreCategoria(datos, ticket.categoriaId)],
+			["Técnico", nombreUsuario(datos, ticket.tecnicoId)],
+			["Fecha", formatearFecha(ticket.fecha)],
+			["Descripción", ticket.descripcion]
+		]));
 	});
 }
 
@@ -572,6 +706,7 @@ async function renderizarPagePanelTecnico(usuario) {
 	filtro.addEventListener("change", () => dibujarTicketsTecnico(datos, usuario, filtro.value));
 
 	dibujarTicketsTecnico(datos, usuario, filtro.value);
+	renderizarEquiposHomologados(datos);
 }
 
 function dibujarTicketsTecnico(datos, usuario, filtro) {
@@ -585,25 +720,30 @@ function dibujarTicketsTecnico(datos, usuario, filtro) {
 		.sort((a, b) => valorPrioridad(b.prioridad) - valorPrioridad(a.prioridad) || new Date(a.fecha) - new Date(b.fecha));
 
 	if (tickets.length === 0) {
-		lista.append(crearElemento("p", "No hay tickets activos."));
+		lista.append(crearElemento("p", "No hay tickets activos.", "tarjeta"));
 		return;
 	}
 
 	tickets.forEach(ticket => {
-		const article = document.createElement("article");
-		article.append(
-			crearElemento("h3", `#${ticket.id} — ${textoVisible(datos, ticket, "titulo", usuario)}`),
-			crearParrafoDato("Empleado", nombreUsuario(datos, ticket.empleadoId)),
-			crearParrafoDato("Categoría", nombreCategoria(datos, ticket.categoriaId)),
-			crearParrafoDato("Descripción", textoVisible(datos, ticket, "descripcion", usuario)),
-			crearParrafoDato("Prioridad", ticket.prioridad),
-			crearParrafoDato("Técnico asignado", nombreUsuario(datos, ticket.tecnicoId)),
-			crearParrafoDato("Abierto el", formatearFecha(ticket.fecha))
-		);
+		const campos = [
+			["Empleado", nombreUsuario(datos, ticket.empleadoId)],
+			["Categoría", nombreCategoria(datos, ticket.categoriaId)],
+			["Técnico", nombreUsuario(datos, ticket.tecnicoId)],
+			["Abierto el", formatearFecha(ticket.fecha)]
+		];
+		if (ticket.equipoId) {
+			const equipo = buscarPorId(datos.equipos, ticket.equipoId);
+			if (equipo) campos.push(["Equipo", `${equipo.nombre} (${equipo.modelo})`]);
+		}
 
-		ticket.comentarios.forEach(comentario => {
-			article.append(crearParrafoDato(`Comentario de ${nombreUsuario(datos, comentario.autorId)}`, comentario.texto));
-		});
+		const article = crearTarjetaTicket(datos, ticket, usuario, campos);
+
+		const descripcion = textoVisible(datos, ticket, "descripcion", usuario);
+		const pDescripcion = crearParrafoDato("Descripción", descripcion);
+		if (descripcion !== ticket.descripcion) pDescripcion.classList.add("confidencial");
+		article.append(pDescripcion);
+
+		ticket.comentarios.forEach(comentario => article.append(crearComentario(datos, comentario)));
 
 		article.append(crearFormularioEstado(datos, ticket, usuario));
 		article.append(crearFormularioNotificacion(datos, ticket));
@@ -613,11 +753,10 @@ function dibujarTicketsTecnico(datos, usuario, filtro) {
 }
 
 function crearFormularioEstado(datos, ticket, usuario) {
-	const form = document.createElement("form");
-	form.className = "form-inline";
+	const form = crearElemento("form", undefined, "form-inline");
 
-	const label = crearElemento("label", "Cambiar estado: ");
 	const select = document.createElement("select");
+	select.setAttribute("aria-label", "Nuevo estado");
 	datos.estados
 		.filter(estado => estado !== "Abierto")
 		.forEach(estado => {
@@ -626,12 +765,11 @@ function crearFormularioEstado(datos, ticket, usuario) {
 			option.selected = estado === ticket.estado;
 			select.append(option);
 		});
-	label.append(select);
 
-	const boton = crearElemento("button", "Guardar");
+	const boton = crearElemento("button", "Cambiar estado", "boton boton-chico");
 	boton.type = "submit";
 
-	form.append(label, boton);
+	form.append(select, boton);
 
 	form.addEventListener("submit", event => {
 		event.preventDefault();
@@ -647,15 +785,15 @@ function crearFormularioEstado(datos, ticket, usuario) {
 }
 
 function crearFormularioNotificacion(datos, ticket) {
-	const form = document.createElement("form");
-	form.className = "form-inline";
+	const form = crearElemento("form", undefined, "form-inline");
 
 	const input = document.createElement("input");
 	input.type = "text";
-	input.placeholder = "Ej: Por favor reinicie su computadora";
+	input.placeholder = "Mensaje al empleado. Ej: Por favor reinicie su computadora";
+	input.setAttribute("aria-label", "Mensaje al empleado");
 	input.required = true;
 
-	const boton = crearElemento("button", "Notificar al empleado");
+	const boton = crearElemento("button", "Notificar", "boton boton-secundario boton-chico");
 	boton.type = "submit";
 
 	const confirmacion = crearElemento("span", "", "mensaje-ok");
@@ -675,10 +813,22 @@ function crearFormularioNotificacion(datos, ticket) {
 		});
 		guardarDatosGlobales(datos);
 		input.value = "";
-		confirmacion.textContent = " Notificación enviada.";
+		confirmacion.textContent = "✓ Enviada";
 	});
 
 	return form;
+}
+
+function renderizarEquiposHomologados(datos) {
+	const tabla = document.querySelector("#tabla-equipos");
+	tabla.append(crearFilaTabla(["Nombre", "Versión / Modelo", "Tipo", "Homologación"], true));
+
+	datos.equipos.forEach(equipo => {
+		const estado = equipo.homologado
+			? crearElemento("span", "Homologado", "estado estado-cerrado")
+			: crearElemento("span", "No homologado", "prioridad prioridad-alta");
+		tabla.append(crearFilaTabla([equipo.nombre, equipo.modelo, equipo.tipo, estado]));
+	});
 }
 
 // ============================================================
@@ -695,30 +845,40 @@ async function renderizarPageTablero(usuario) {
 	// Indicadores generales
 	[
 		["Tickets totales", datos.tickets.length],
-		["Tickets activos", activos.length],
-		["Tickets cerrados", datos.tickets.length - activos.length],
+		["Activos", activos.length],
+		["Cerrados", datos.tickets.length - activos.length],
 		["Sin asignar", activos.filter(t => t.tecnicoId === null).length]
 	].forEach(([titulo, valor]) => {
-		const article = document.createElement("article");
-		article.className = "indicador";
+		const article = crearElemento("article", undefined, "indicador");
 		article.append(crearElemento("h3", titulo), crearElemento("p", valor, "numero"));
 		resumen.append(article);
 	});
 
 	// Categorías ordenadas por frecuencia
-	const tablaCategorias = document.querySelector("#tabla-categorias");
-	tablaCategorias.append(crearFilaTabla(["Categoría", "Cantidad de tickets"], true));
-	datos.categorias
+	const barras = document.querySelector("#barras-categorias");
+	const frecuencias = datos.categorias
 		.map(categoria => ({
 			nombre: categoria.nombre,
 			cantidad: datos.tickets.filter(t => t.categoriaId === categoria.id).length
 		}))
-		.sort((a, b) => b.cantidad - a.cantidad)
-		.forEach(fila => tablaCategorias.append(crearFilaTabla([fila.nombre, fila.cantidad])));
+		.sort((a, b) => b.cantidad - a.cantidad);
+	const maximo = Math.max(1, ...frecuencias.map(f => f.cantidad));
+
+	frecuencias.forEach(fila => {
+		const contenedor = document.createElement("div");
+		const texto = crearElemento("div", undefined, "barra-fila");
+		texto.append(crearElemento("span", fila.nombre), crearElemento("strong", fila.cantidad));
+		const fondo = crearElemento("div", undefined, "barra-fondo");
+		const relleno = crearElemento("div", undefined, "barra-relleno");
+		relleno.style.width = `${(fila.cantidad / maximo) * 100}%`;
+		fondo.append(relleno);
+		contenedor.append(texto, fondo);
+		barras.append(contenedor);
+	});
 
 	// Carga de trabajo por técnico
 	const tablaTecnicos = document.querySelector("#tabla-tecnicos");
-	tablaTecnicos.append(crearFilaTabla(["Técnico", "Nivel", "Tickets activos"], true));
+	tablaTecnicos.append(crearFilaTabla(["Técnico", "Nivel", "Activos"], true));
 	datos.usuarios
 		.filter(u => u.rol === "tecnico")
 		.forEach(tecnico => {
@@ -730,35 +890,27 @@ async function renderizarPageTablero(usuario) {
 	const criticos = document.querySelector("#lista-criticos");
 	const altos = activos.filter(t => t.prioridad === "Alta");
 	if (altos.length === 0) {
-		criticos.append(crearElemento("p", "No hay incidentes críticos activos en este momento."));
+		criticos.append(crearElemento("p", "No hay incidentes críticos activos en este momento.", "tarjeta"));
 	}
 	altos.forEach(ticket => {
 		const horas = Math.floor((Date.now() - new Date(ticket.fecha)) / 3600000);
-		const article = document.createElement("article");
-		article.append(
-			crearElemento("h3", `#${ticket.id} — ${ticket.titulo}`),
-			crearParrafoDato("Estado", ticket.estado),
-			crearParrafoDato("Técnico asignado", nombreUsuario(datos, ticket.tecnicoId)),
-			crearParrafoDato("Tiempo desde la apertura", `${horas} horas`)
-		);
-		criticos.append(article);
+		criticos.append(crearTarjetaTicket(datos, ticket, usuario, [
+			["Técnico asignado", nombreUsuario(datos, ticket.tecnicoId)],
+			["Tiempo desde la apertura", `${horas} horas`]
+		]));
 	});
 
 	// Información confidencial (sólo visible para el gerente)
 	const confidenciales = document.querySelector("#lista-confidenciales");
 	const listaConf = datos.tickets.filter(t => esConfidencial(datos, t));
 	if (listaConf.length === 0) {
-		confidenciales.append(crearElemento("p", "No hay tickets con información confidencial."));
+		confidenciales.append(crearElemento("p", "No hay tickets con información confidencial.", "tarjeta"));
 	}
 	listaConf.forEach(ticket => {
-		const article = document.createElement("article");
-		article.append(
-			crearElemento("h3", `#${ticket.id} — ${ticket.titulo}`),
-			crearParrafoDato("Empleado", nombreUsuario(datos, ticket.empleadoId)),
-			crearParrafoDato("Descripción", ticket.descripcion),
-			crearParrafoDato("Estado", ticket.estado)
-		);
-		confidenciales.append(article);
+		confidenciales.append(crearTarjetaTicket(datos, ticket, usuario, [
+			["Empleado", nombreUsuario(datos, ticket.empleadoId)],
+			["Descripción", ticket.descripcion]
+		]));
 	});
 
 	// Restablecer los datos de prueba

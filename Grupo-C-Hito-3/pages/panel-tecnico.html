@@ -4,49 +4,64 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Panel de Tickets</title>
+	<title>Panel de Tickets | TechSolve</title>
 	<link rel="stylesheet" href="../css/styles.css">
 	<script src="../js/scripts.js" defer></script>
 </head>
 
 <body>
 
-	<header>
-		<img src="../images/pngegg.png" alt="Logo TechSolve">
-		<h1>Rutas Rapidas</h1>
-		<p>Soporte tecnico TechSolve</p>
+	<header class="topbar">
+		<a class="marca" href="../index.html">
+			<img src="../images/pngegg.png" alt="Logo TechSolve">
+			<span>
+				<strong>TechSolve</strong>
+				<small>Soporte técnico · RutaRápida</small>
+			</span>
+		</a>
+
+		<nav>
+			<ul>
+				<li><a href="../index.html">Inicio</a></li>
+				<li class="empleado"><a href="solicitar-ticket.html">Nuevo Ticket</a></li>
+				<li class="empleado"><a href="mis-tickets.html">Mis Tickets</a></li>
+				<li class="empleado"><a href="historial.html">Historial</a></li>
+				<li class="tecnico"><a href="panel-tecnico.html">Panel de Tickets</a></li>
+				<li class="gerente"><a href="tablero.html">Tablero de Control</a></li>
+				<li class="visitante"><a href="login.html" class="boton-nav">Iniciar sesión</a></li>
+				<li class="empleado tecnico gerente usuario"><span id="usuario-conectado"></span></li>
+				<li class="empleado tecnico gerente"><a href="#" id="cerrar-sesion" class="boton-nav">Cerrar sesión</a></li>
+			</ul>
+		</nav>
 	</header>
 
-	<nav>
-		<ul>
-			<li><a href="../index.html">Inicio</a></li>
-			<li class="empleado"><a href="solicitar-ticket.html">Solicitar Ticket</a></li>
-			<li class="empleado"><a href="mis-tickets.html">Mis Tickets</a></li>
-			<li class="empleado"><a href="historial.html">Historial de Tickets</a></li>
-			<li class="tecnico"><a href="panel-tecnico.html">Panel de Tickets</a></li>
-			<li class="gerente"><a href="tablero.html">Tablero de Control</a></li>
-			<li class="visitante"><a href="login.html">Iniciar sesión</a></li>
-			<li class="empleado tecnico gerente"><span id="usuario-conectado"></span></li>
-			<li class="empleado tecnico gerente"><a href="#" id="cerrar-sesion">Cerrar sesión</a></li>
-		</ul>
-	</nav>
-
 	<main>
+		<section class="encabezado-pagina">
+			<h1>&gt; tickets_entrantes --orden urgencia</h1>
+			<p class="texto-suave">Tickets activos ordenados de mayor a menor prioridad.</p>
+		</section>
+
 		<section>
-			<h2>Tickets entrantes por urgencia</h2>
-			<p>
-				<label for="filtro-panel">Mostrar:</label>
+			<p class="filtro">
+				<label for="filtro-panel">Mostrar</label>
 				<select id="filtro-panel">
 					<option value="mios">Asignados a mí y sin asignar</option>
 					<option value="todos">Todos los tickets activos</option>
 				</select>
 			</p>
-			<div id="lista-tickets-tecnico"></div>
+			<div id="lista-tickets-tecnico" class="lista-tarjetas"></div>
+		</section>
+
+		<section>
+			<h2>&gt; equipos_homologados</h2>
+			<div class="tabla-contenedor">
+				<table id="tabla-equipos"></table>
+			</div>
 		</section>
 	</main>
 
 	<footer>
-		<p>© 2026 Soporte tecnico TechSolve</p>
+		<p>© 2026 TechSolve · Soporte técnico de RutaRápida · Grupo C</p>
 	</footer>
 
 </body>
