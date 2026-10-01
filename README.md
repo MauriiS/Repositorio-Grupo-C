@@ -78,3 +78,43 @@ El sistema permite a los empleados reportar fallas técnicas de manera ágil y s
 
 \- Implementación del Modo Oscuro forzado para la interfaz de técnicos.
 
+
+
+
+\## Hito 3 — Interfaz dinámica y persistencia
+
+El código del Hito 3 está en la carpeta `Grupo-C-Hito-3/` (se mantiene la misma estructura del Hito 2 y se agregan `data/datos.json` y `js/scripts.js`). La carpeta `Grupo-C-Hito-2/` queda tal cual se entregó.
+
+\*\*Cómo probarlo:\*\* como se usa `fetch()`, hay que abrirlo con un servidor local (por ejemplo la extensión Live Server de VS Code, o `python -m http.server` dentro de `Grupo-C-Hito-3`). Abriendo el HTML con doble clic (`file://`) el navegador bloquea la carga del JSON.
+
+\*\*Usuarios de prueba\*\* (contraseña `1234` para todos):
+
+| Rol | Email |
+|---|---|
+| Empleado | santino@rutarapida.com / martina@rutarapida.com |
+| Técnico de Soporte | lucas@rutarapida.com (Senior) / milagros@rutarapida.com (Junior) |
+| Gerente de TI | mauricio@rutarapida.com / cintia@rutarapida.com |
+
+\*\*Datos modelados en `datos.json`:\*\* usuarios (2 por rol), categorías, equipos homologados, tickets (relacionados con un empleado, un técnico y una categoría, con sus comentarios), notificaciones (relacionadas con un empleado y un ticket), estados, palabras clave para prioridad, palabras confidenciales y el aviso de mantenimiento.
+
+\*\*Funcionalidades implementadas:\*\*
+
+\- \*\*login.html:\*\* inicio de sesión simulado contra los usuarios de `datos.json`; el usuario conectado se guarda en `localStorage`. Cerrar sesión desde la barra de navegación.
+
+\- \*\*Navegación por rol:\*\* cada rol ve sólo sus páginas; si alguien entra por URL a una página sin sesión o sin permiso, se lo redirige.
+
+\- \*\*index.html:\*\* bienvenida con el nombre del usuario, aviso de mantenimiento programado, notificaciones enviadas por los técnicos (empleado), servicios según el rol y categorías cargadas desde el JSON.
+
+\- \*\*solicitar-ticket.html (Empleado):\*\* sigue el caso de uso "Crear Ticket de Soporte" en 3 pasos: elegir la categoría, completar el formulario de esa categoría (en Falla de Hardware se elige el equipo afectado) y ver el comprobante. La prioridad se asigna automáticamente por palabras clave del título y se muestra antes de confirmar. Incluye los flujos alternativos: botón Cancelar (A0), bloqueo con 3 tickets abiertos (A1) e indicador de carga al registrar (A2).
+
+\- \*\*mis-tickets.html (Empleado):\*\* tabla con sus tickets activos y formulario para agregar comentarios (se guardan con fecha).
+
+\- \*\*historial.html (Empleado):\*\* sus tickets cerrados, del más reciente al más antiguo.
+
+\- \*\*panel-tecnico.html (Técnico):\*\* tickets activos ordenados por urgencia, cambio de estado, envío de notificaciones al empleado, lista de equipos y software homologado, modo oscuro con fuente monoespaciada y enmascaramiento de tickets confidenciales ("Recibo de Sueldo" / "Liquidación").
+
+\- \*\*tablero.html (Gerente de TI):\*\* indicadores generales, categorías por frecuencia, carga por técnico, incidentes críticos (prioridad Alta), información confidencial visible y botón para restablecer los datos de prueba.
+
+Todos los cambios (tickets nuevos, comentarios, estados, notificaciones) se guardan en `localStorage` y se ven reflejados en las demás vistas: por ejemplo, un ticket creado por un empleado aparece en "Mis Tickets", en el panel del técnico y en el tablero del gerente.
+
+\*\*Diseño:\*\* tema oscuro para todo el portal, adaptado a celulares. Para los técnicos se fuerza un modo oscuro tipo consola con fuente monoespaciada (RNF 4). No se usan frameworks ni librerías externas.

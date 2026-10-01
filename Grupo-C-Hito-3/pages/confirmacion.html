@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ticket registrado | TechSolve</title>
+	<link rel="stylesheet" href="../css/styles.css">
+	<script src="../js/scripts.js" defer></script>
+</head>
+
+<body>
+
+	<header class="topbar">
+		<a class="marca" href="../index.html">
+			<img src="../images/pngegg.png" alt="Logo TechSolve">
+			<span>
+				<strong>TechSolve</strong>
+				<small>Soporte técnico · RutaRápida</small>
+			</span>
+		</a>
+
+		<nav>
+			<ul>
+				<li><a href="../index.html">Inicio</a></li>
+				<li class="empleado"><a href="solicitar-ticket.html">Nuevo Ticket</a></li>
+				<li class="empleado"><a href="mis-tickets.html">Mis Tickets</a></li>
+				<li class="empleado"><a href="historial.html">Historial</a></li>
+				<li class="tecnico"><a href="panel-tecnico.html">Panel de Tickets</a></li>
+				<li class="gerente"><a href="tablero.html">Tablero de Control</a></li>
+				<li class="visitante"><a href="login.html" class="boton-nav">Iniciar sesión</a></li>
+				<li class="empleado tecnico gerente usuario"><span id="usuario-conectado"></span></li>
+				<li class="empleado tecnico gerente"><a href="#" id="cerrar-sesion" class="boton-nav">Cerrar sesión</a></li>
+			</ul>
+		</nav>
+	</header>
+
+	<main>
+		<ol class="pasos">
+			<li class="hecho"><span>1</span> Categoría</li>
+			<li class="hecho"><span>2</span> Detalle</li>
+			<li class="activo"><span>3</span> Comprobante</li>
+		</ol>
+
+		<section class="tarjeta comprobante">
+			<p class="icono-ok">✓</p>
+			<h1>Ticket registrado</h1>
+			<p class="texto-suave">Guardá tu número de seguimiento. El equipo de soporte ya puede ver tu ticket.</p>
+			<div id="detalle-confirmacion"></div>
+			<div class="acciones acciones-centro">
+				<a href="mis-tickets.html" class="boton">Ver mis tickets</a>
+				<a href="../index.html" class="boton boton-secundario">Volver al inicio</a>
+			</div>
+		</section>
+	</main>
+
+	<footer>
+		<p>© 2026 TechSolve · Soporte técnico de RutaRápida · Grupo C</p>
+	</footer>
+
+</body>
+
+</html>
