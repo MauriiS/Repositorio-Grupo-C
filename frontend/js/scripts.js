@@ -371,14 +371,21 @@ async function renderizarPageLogin() {
 		botonIngresar.disabled = true;
 		botonIngresar.textContent = "Ingresando...";
 
+		// En Render gratis el server se duerme y tarda en despertar
+		const avisoDemora = setTimeout(() => {
+			mensaje.textContent = "El servidor se está despertando, puede tardar hasta un minuto...";
+		}, 4000);
+
 		try {
 			const sesion = await api("/api/login", {
 				method: "POST",
 				body: { email: inputEmail.value.trim(), password: inputPassword.value }
 			});
+			clearTimeout(avisoDemora);
 			guardarSesion(sesion);
 			window.location.href = resolverUrlRelativa("index.html");
 		} catch (error) {
+			clearTimeout(avisoDemora);
 			mensaje.textContent = error.message;
 			botonIngresar.disabled = false;
 			botonIngresar.textContent = "Ingresar";
