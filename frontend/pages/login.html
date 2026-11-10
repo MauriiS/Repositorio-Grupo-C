@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Mis Tickets | TechSolve</title>
+	<title>Iniciar sesión | TechSolve</title>
 	<link rel="stylesheet" href="../css/styles.css">
 	<script src="../js/scripts.js" defer></script>
 </head>
@@ -13,7 +13,7 @@
 
 	<header class="topbar">
 		<a class="marca" href="../index.html">
-			<img src="../images/pngegg.png" alt="Logo TechSolve">
+			<img src="../assets/pngegg.png" alt="Logo TechSolve">
 			<span>
 				<strong>TechSolve</strong>
 				<small>Soporte técnico · RutaRápida</small>
@@ -36,33 +36,27 @@
 	</header>
 
 	<main>
-		<section class="encabezado-pagina">
-			<h1>Mis tickets</h1>
-			<p class="texto-suave">Tickets activos, del más reciente al más antiguo.</p>
-		</section>
-
-		<section>
-			<p id="sin-tickets" class="alerta" hidden>No tenés tickets activos.</p>
-			<div class="tabla-contenedor">
-				<table id="tabla-mis-tickets"></table>
-			</div>
-		</section>
-
-		<section>
-			<h2>Comentarios</h2>
-			<div id="lista-comentarios"></div>
-			<form id="form-comentario" class="tarjeta">
-				<h3>Agregar un comentario</h3>
+		<section class="tarjeta login">
+			<h1>Iniciar sesión</h1>
+			<p class="texto-suave">Ingresá con tu usuario corporativo.</p>
+			<form id="form-login">
 				<p>
-					<label for="ticket-comentario">Ticket</label>
-					<select id="ticket-comentario" name="ticket"></select>
+					<label for="email">Email corporativo</label>
+					<input type="email" id="email" name="email" placeholder="nombre@rutarapida.com" required>
 				</p>
 				<p>
-					<label for="comment">Comentario</label>
-					<textarea id="comment" name="comment" placeholder="Ej: el problema empeoró desde ayer" required></textarea>
+					<label for="password">Contraseña</label>
+					<input type="password" id="password" name="password" required>
 				</p>
-				<button type="submit" class="boton">Enviar comentario</button>
+				<p id="mensaje-login" class="mensaje-error"></p>
+				<button type="submit" class="boton boton-ancho">Ingresar</button>
 			</form>
+		</section>
+
+		<section class="tarjeta login">
+			<h3>Usuarios de prueba</h3>
+			<p class="texto-suave">Contraseña: 1234. Tocá uno para completar el formulario.</p>
+			<ul id="usuarios-demo" class="usuarios-demo"></ul>
 		</section>
 	</main>
 

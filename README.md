@@ -83,9 +83,9 @@ El sistema permite a los empleados reportar fallas técnicas de manera ágil y s
 
 \## Hito 3 — Interfaz dinámica y persistencia
 
-El código del Hito 3 está en la carpeta `Grupo-C-Hito-3/` (se mantiene la misma estructura del Hito 2 y se agregan `data/datos.json` y `js/scripts.js`). La carpeta `Grupo-C-Hito-2/` queda tal cual se entregó.
+El código del Hito 3 es el que hoy está en la carpeta `frontend/` (se mantuvo la estructura del Hito 2 y se agregaron `data/datos.json` y `js/scripts.js`). El prototipo del Hito 2 quedó guardado en `documentacion/hito-2/`.
 
-\*\*Cómo probarlo:\*\* como se usa `fetch()`, hay que abrirlo con un servidor local (por ejemplo la extensión Live Server de VS Code, o `python -m http.server` dentro de `Grupo-C-Hito-3`). Abriendo el HTML con doble clic (`file://`) el navegador bloquea la carga del JSON.
+\*\*Cómo probarlo:\*\* como se usa `fetch()`, hay que abrirlo con un servidor local (por ejemplo la extensión Live Server de VS Code, o `python -m http.server` dentro de `frontend`). Abriendo el HTML con doble clic (`file://`) el navegador bloquea la carga del JSON.
 
 \*\*Usuarios de prueba\*\* (contraseña `1234` para todos):
 
@@ -118,3 +118,81 @@ El código del Hito 3 está en la carpeta `Grupo-C-Hito-3/` (se mantiene la mism
 Todos los cambios (tickets nuevos, comentarios, estados, notificaciones) se guardan en `localStorage` y se ven reflejados en las demás vistas: por ejemplo, un ticket creado por un empleado aparece en "Mis Tickets", en el panel del técnico y en el tablero del gerente.
 
 \*\*Diseño:\*\* tema oscuro para todo el portal, adaptado a celulares. Para los técnicos se fuerza un modo oscuro tipo consola con fuente monoespaciada (RNF 4). No se usan frameworks ni librerías externas.
+
+
+
+\## Hito Final — MVP con backend
+
+\### Estructura del proyecto
+
+```
+Repositorio-Grupo-C/
+├── backend/          API REST (Node.js + Express)
+│   ├── index.js
+│   ├── data/datos.json   datos iniciales que se cargan en memoria
+│   ├── package.json
+│   └── package-lock.json
+├── frontend/         sitio estático (HTML, CSS y JavaScript)
+│   ├── index.html
+│   ├── css/
+│   ├── js/
+│   ├── pages/
+│   └── assets/
+├── documentacion/    relevamiento, prototipo del Hito 2 y archivos de los integrantes
+└── README.md
+```
+
+\### Cómo ejecutar el backend
+
+Requiere Node.js 18 o superior.
+
+```
+cd backend
+npm install
+npm start
+```
+
+La API queda disponible en `http://localhost:3000`. Los datos se guardan en memoria: se cargan desde `backend/data/datos.json` al iniciar y se pierden cuando el servidor se reinicia.
+
+\### Autenticación
+
+`POST /api/login` devuelve un `token`. El resto de los endpoints que requieren sesión lo reciben en el encabezado `Authorization: Bearer <token>`. Cada endpoint valida el rol del usuario (empleado, técnico o gerente) y responde `401` sin sesión o `403` sin permisos.
+
+\### Endpoints de la API
+
+| Método | Ruta | Rol | Descripción |
+|---|---|---|---|
+| GET | `/` | — | Estado del servicio |
+| POST | `/api/login` | — | Inicia sesión con `email` y `password`; devuelve token y usuario |
+| POST | `/api/logout` | Todos | Cierra la sesión |
+| GET | `/api/usuarios-demo` | — | Usuarios de prueba (email y rol, sin contraseñas) |
+| GET | `/api/categorias` | — | Categorías de soporte |
+| GET | `/api/aviso-mantenimiento` | — | Aviso de mantenimiento vigente |
+| GET | `/api/equipos?tipo=` | Todos | Equipos y software homologados |
+| GET | `/api/estados` | Todos | Estados posibles de un ticket |
+| GET | `/api/prioridad?titulo=` | Todos | Prioridad que se asignaría a un título |
+| POST | `/api/tickets` | Empleado | Crea un ticket (`categoriaId`, `titulo`, `descripcion`, `equipoId`) |
+| GET | `/api/mis-tickets?estado=activos\|cerrados` | Empleado | Tickets del empleado conectado |
+| GET | `/api/tickets/:id` | Todos | Detalle de un ticket (el empleado sólo ve los suyos) |
+| POST | `/api/tickets/:id/comentarios` | Empleado | Agrega un comentario (`texto`) |
+| GET | `/api/notificaciones` | Empleado | Notificaciones no leídas |
+| PATCH | `/api/notificaciones/:id` | Empleado | Marca una notificación como leída (`leida`) |
+| GET | `/api/tickets?filtro=mios\|todos` | Técnico | Tickets activos ordenados por urgencia |
+| PATCH | `/api/tickets/:id/estado` | Técnico | Cambia el estado (`estado`) y asigna el ticket si no tenía técnico |
+| POST | `/api/tickets/:id/notificaciones` | Técnico | Envía una notificación al empleado (`mensaje`) |
+| GET | `/api/tablero` | Gerente | Indicadores, categorías por frecuencia y carga por técnico |
+| GET | `/api/tablero/criticos` | Gerente | Tickets activos de prioridad Alta |
+| GET | `/api/tablero/confidenciales` | Gerente | Tickets con información confidencial |
+| POST | `/api/reiniciar` | Gerente | Restablece los datos de prueba |
+
+\### Reglas de negocio implementadas en el backend
+
+\- \*\*Máximo 3 tickets abiertos por empleado:\*\* si ya tiene 3 en estado "Abierto", `POST /api/tickets` responde `409` y no crea el ticket.
+
+\- \*\*Prioridad automática:\*\* el backend asigna Alta, Media o Baja según las palabras clave del título; el frontend no puede elegirla.
+
+\- \*\*Información confidencial:\*\* los tickets que mencionan "recibo de sueldo" o "liquidación" se envían enmascarados a los técnicos y completos al gerente.
+
+\- \*\*Comentarios sólo en tickets activos:\*\* se aceptan en estado "Abierto", "Asignado" o "En Progreso".
+
+\- \*\*Equipo obligatorio en fallas de hardware:\*\* la categoría "Falla de Hardware" exige indicar un equipo homologado.

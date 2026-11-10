@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Iniciar sesión | TechSolve</title>
+	<title>Panel de Tickets | TechSolve</title>
 	<link rel="stylesheet" href="../css/styles.css">
 	<script src="../js/scripts.js" defer></script>
 </head>
@@ -13,7 +13,7 @@
 
 	<header class="topbar">
 		<a class="marca" href="../index.html">
-			<img src="../images/pngegg.png" alt="Logo TechSolve">
+			<img src="../assets/pngegg.png" alt="Logo TechSolve">
 			<span>
 				<strong>TechSolve</strong>
 				<small>Soporte técnico · RutaRápida</small>
@@ -36,27 +36,27 @@
 	</header>
 
 	<main>
-		<section class="tarjeta login">
-			<h1>Iniciar sesión</h1>
-			<p class="texto-suave">Ingresá con tu usuario corporativo.</p>
-			<form id="form-login">
-				<p>
-					<label for="email">Email corporativo</label>
-					<input type="email" id="email" name="email" placeholder="nombre@rutarapida.com" required>
-				</p>
-				<p>
-					<label for="password">Contraseña</label>
-					<input type="password" id="password" name="password" required>
-				</p>
-				<p id="mensaje-login" class="mensaje-error"></p>
-				<button type="submit" class="boton boton-ancho">Ingresar</button>
-			</form>
+		<section class="encabezado-pagina">
+			<h1>&gt; tickets_entrantes --orden urgencia</h1>
+			<p class="texto-suave">Tickets activos ordenados de mayor a menor prioridad.</p>
 		</section>
 
-		<section class="tarjeta login">
-			<h3>Usuarios de prueba</h3>
-			<p class="texto-suave">Contraseña: 1234. Tocá uno para completar el formulario.</p>
-			<ul id="usuarios-demo" class="usuarios-demo"></ul>
+		<section>
+			<p class="filtro">
+				<label for="filtro-panel">Mostrar</label>
+				<select id="filtro-panel">
+					<option value="mios">Asignados a mí y sin asignar</option>
+					<option value="todos">Todos los tickets activos</option>
+				</select>
+			</p>
+			<div id="lista-tickets-tecnico" class="lista-tarjetas"></div>
+		</section>
+
+		<section>
+			<h2>&gt; equipos_homologados</h2>
+			<div class="tabla-contenedor">
+				<table id="tabla-equipos"></table>
+			</div>
 		</section>
 	</main>
 

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Tablero de Control | TechSolve</title>
+	<title>Ticket registrado | TechSolve</title>
 	<link rel="stylesheet" href="../css/styles.css">
 	<script src="../js/scripts.js" defer></script>
 </head>
@@ -13,7 +13,7 @@
 
 	<header class="topbar">
 		<a class="marca" href="../index.html">
-			<img src="../images/pngegg.png" alt="Logo TechSolve">
+			<img src="../assets/pngegg.png" alt="Logo TechSolve">
 			<span>
 				<strong>TechSolve</strong>
 				<small>Soporte técnico · RutaRápida</small>
@@ -36,41 +36,21 @@
 	</header>
 
 	<main>
-		<section class="encabezado-pagina">
-			<h1>Tablero de control</h1>
-			<p class="texto-suave">Estado de todos los incidentes en tiempo real.</p>
-		</section>
+		<ol class="pasos">
+			<li class="hecho"><span>1</span> Categoría</li>
+			<li class="hecho"><span>2</span> Detalle</li>
+			<li class="activo"><span>3</span> Comprobante</li>
+		</ol>
 
-		<section>
-			<div id="resumen-tablero" class="indicadores"></div>
-		</section>
-
-		<div class="columnas">
-			<section class="tarjeta">
-				<h2>Categorías por frecuencia</h2>
-				<div id="barras-categorias" class="barras"></div>
-			</section>
-
-			<section class="tarjeta">
-				<h2>Carga por técnico</h2>
-				<div class="tabla-contenedor">
-					<table id="tabla-tecnicos"></table>
-				</div>
-			</section>
-		</div>
-
-		<section>
-			<h2>Incidentes críticos</h2>
-			<div id="lista-criticos" class="lista-tarjetas"></div>
-		</section>
-
-		<section>
-			<h2>Información confidencial</h2>
-			<div id="lista-confidenciales" class="lista-tarjetas"></div>
-		</section>
-
-		<section class="zona-reinicio">
-			<button type="button" id="reiniciar-datos" class="boton boton-secundario">Restablecer datos de prueba</button>
+		<section class="tarjeta comprobante">
+			<p class="icono-ok">✓</p>
+			<h1>Ticket registrado</h1>
+			<p class="texto-suave">Guardá tu número de seguimiento. El equipo de soporte ya puede ver tu ticket.</p>
+			<div id="detalle-confirmacion"></div>
+			<div class="acciones acciones-centro">
+				<a href="mis-tickets.html" class="boton">Ver mis tickets</a>
+				<a href="../index.html" class="boton boton-secundario">Volver al inicio</a>
+			</div>
 		</section>
 	</main>
 
