@@ -10,8 +10,8 @@
 		},
 		{
 			"id": 2,
-			"nombre": "Martina Orzusa",
-			"email": "martina@rutarapida.com",
+			"nombre": "Mariano Desia",
+			"email": "mariano@rutarapida.com",
 			"password": "1234",
 			"rol": "empleado",
 			"area": "Administración"
