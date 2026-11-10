@@ -16,7 +16,7 @@ Grupo C
 
 \- Mauricio Sanchez
 
-\- Martina Orzusa
+\- Mariano Desia
 
 \- Lucas Desia
 
@@ -91,7 +91,7 @@ El código del Hito 3 es el que hoy está en la carpeta `frontend/` (se mantuvo 
 
 | Rol | Email |
 |---|---|
-| Empleado | santino@rutarapida.com / martina@rutarapida.com |
+| Empleado | santino@rutarapida.com / mariano@rutarapida.com |
 | Técnico de Soporte | lucas@rutarapida.com (Senior) / milagros@rutarapida.com (Junior) |
 | Gerente de TI | mauricio@rutarapida.com / cintia@rutarapida.com |
 
@@ -153,6 +153,12 @@ npm start
 ```
 
 La API queda disponible en `http://localhost:3000`. Los datos se guardan en memoria: se cargan desde `backend/data/datos.json` al iniciar y se pierden cuando el servidor se reinicia.
+
+\### Cómo ejecutar el frontend
+
+Con el backend andando, abrir la carpeta `frontend/` con un servidor local (por ejemplo Live Server de VS Code, o `python -m http.server` dentro de `frontend`). La URL del backend se configura en `frontend/js/config.js`.
+
+El frontend ya no guarda datos del negocio: todo se pide a la API con `fetch()`. En `localStorage` sólo queda la sesión (token y usuario conectado).
 
 \### Autenticación
 

@@ -1,10 +1,9 @@
 // ============================================================
 // CONFIGURACIÓN Y RUTAS
+// La URL del backend se define en js/config.js (API_URL)
 // ============================================================
 
-const STORAGE_KEY = "techsolveData";
-const SESSION_KEY = "techsolveUsuario";
-const MAX_TICKETS_ABIERTOS = 3;
+const SESSION_KEY = "techsolveSesion";
 
 // Páginas protegidas y qué roles pueden verlas
 const PERMISOS_PAGINAS = {
@@ -28,63 +27,91 @@ function paginaActual() {
 }
 
 // ============================================================
-// LOCAL STORAGE
+// SESIÓN
+// En localStorage sólo queda el token y el usuario conectado.
+// Los datos del negocio viven en el backend.
 // ============================================================
 
-function guardarDatosGlobales(datos) {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
+function guardarSesion(sesion) {
+	localStorage.setItem(SESSION_KEY, JSON.stringify(sesion));
 }
 
-function guardarUsuarioActual(usuario) {
-	localStorage.setItem(SESSION_KEY, JSON.stringify(usuario));
+function obtenerSesion() {
+	const sesion = localStorage.getItem(SESSION_KEY);
+	return sesion ? JSON.parse(sesion) : null;
 }
 
 function obtenerUsuarioActual() {
-	const usuario = localStorage.getItem(SESSION_KEY);
-	return usuario ? JSON.parse(usuario) : null;
+	const sesion = obtenerSesion();
+	return sesion ? sesion.usuario : null;
 }
 
-function cerrarSesion() {
+function irAlLogin() {
 	localStorage.removeItem(SESSION_KEY);
 	window.location.href = resolverUrlRelativa("pages/login.html");
 }
 
-async function obtenerDatosGlobales() {
-	const ruta = resolverUrlRelativa("data/datos.json");
-	const respuesta = await fetch(ruta);
-	const datosIniciales = await respuesta.json();
-	const datosGuardados = localStorage.getItem(STORAGE_KEY);
+async function cerrarSesion() {
+	try {
+		await api("/api/logout", { method: "POST" });
+	} catch (error) {
+		// Si el server ya no tenía la sesión, igual salimos
+	}
+	irAlLogin();
+}
 
-	if (!datosGuardados) {
-		guardarDatosGlobales(datosIniciales);
-		return datosIniciales;
+// ============================================================
+// COMUNICACIÓN CON LA API
+// ============================================================
+
+// Hace la petición al backend, manda el token y devuelve el JSON.
+// Si el backend responde con error, lanza una excepción con su mensaje.
+async function api(ruta, opciones = {}) {
+	const sesion = obtenerSesion();
+	const headers = { "Content-Type": "application/json" };
+	if (sesion) headers.Authorization = `Bearer ${sesion.token}`;
+
+	let respuesta;
+	try {
+		respuesta = await fetch(API_URL + ruta, {
+			method: opciones.method || "GET",
+			headers: headers,
+			body: opciones.body ? JSON.stringify(opciones.body) : undefined
+		});
+	} catch (error) {
+		throw new Error("No se pudo conectar con el servidor. Probá de nuevo en unos segundos.");
 	}
 
-	const datosGuardadosParseados = JSON.parse(datosGuardados);
+	const datos = await respuesta.json().catch(() => ({}));
 
-	return {
-		...datosIniciales,
-		...datosGuardadosParseados
-	};
+	// Sesión vencida (por ejemplo, se reinició el server)
+	if (respuesta.status === 401 && sesion && ruta !== "/api/logout") {
+		irAlLogin();
+		throw new Error(datos.error || "Debe iniciar sesión.");
+	}
+
+	if (!respuesta.ok) {
+		throw new Error(datos.error || "Ocurrió un error inesperado.");
+	}
+
+	return datos;
+}
+
+// Muestra un error general arriba del contenido de la página
+function mostrarError(mensaje) {
+	let alerta = document.querySelector("#error-general");
+	if (!alerta) {
+		alerta = crearElemento("article", undefined, "alerta alerta-error");
+		alerta.id = "error-general";
+		document.querySelector("main").prepend(alerta);
+	}
+	alerta.innerHTML = "";
+	alerta.append(crearElemento("h3", "Algo salió mal"), crearElemento("p", mensaje));
 }
 
 // ============================================================
-// UTILIDADES DEL DOMINIO
+// UTILIDADES DE LA INTERFAZ
 // ============================================================
-
-function buscarPorId(lista, id) {
-	return lista.find(elemento => elemento.id === id);
-}
-
-function nombreUsuario(datos, id) {
-	const usuario = buscarPorId(datos.usuarios, id);
-	return usuario ? usuario.nombre : "Sin asignar";
-}
-
-function nombreCategoria(datos, id) {
-	const categoria = buscarPorId(datos.categorias, id);
-	return categoria ? categoria.nombre : "-";
-}
 
 function formatearFecha(fechaIso) {
 	return new Date(fechaIso).toLocaleString("es-AR", {
@@ -94,33 +121,6 @@ function formatearFecha(fechaIso) {
 		hour: "2-digit",
 		minute: "2-digit"
 	});
-}
-
-// Asigna la prioridad según las palabras clave del título (regla de negocio)
-function calcularPrioridad(datos, titulo) {
-	const texto = titulo.toLowerCase();
-	const claves = datos.palabrasClavePrioridad;
-
-	if (claves.Alta.some(palabra => texto.includes(palabra))) return "Alta";
-	if (claves.Media.some(palabra => texto.includes(palabra))) return "Media";
-	return "Baja";
-}
-
-function valorPrioridad(prioridad) {
-	return { Alta: 3, Media: 2, Baja: 1 }[prioridad] || 0;
-}
-
-function esConfidencial(datos, ticket) {
-	const texto = `${ticket.titulo} ${ticket.descripcion}`.toLowerCase();
-	return datos.palabrasConfidenciales.some(palabra => texto.includes(palabra));
-}
-
-// Sólo el Gerente de TI puede ver la información confidencial
-function textoVisible(datos, ticket, campo, usuario) {
-	if (usuario.rol === "tecnico" && esConfidencial(datos, ticket)) {
-		return "******** (información confidencial)";
-	}
-	return ticket[campo];
 }
 
 function crearElemento(etiqueta, texto, clase) {
@@ -133,7 +133,7 @@ function crearElemento(etiqueta, texto, clase) {
 function crearParrafoDato(etiqueta, valor) {
 	const p = document.createElement("p");
 	const strong = crearElemento("strong", `${etiqueta}: `);
-	p.append(strong, String(valor));
+	p.append(strong, String(valor ?? "-"));
 	return p;
 }
 
@@ -160,16 +160,15 @@ function crearEtiquetaPrioridad(prioridad) {
 	return crearElemento("span", prioridad, "prioridad prioridad-" + prioridad.toLowerCase());
 }
 
-
-// Tarjeta de ticket reutilizada en historial, panel del técnico y tablero
-function crearTarjetaTicket(datos, ticket, usuario, campos) {
+// Tarjeta de ticket reutilizada en historial, panel del técnico y tablero.
+// El backend ya manda los nombres y el texto enmascarado si corresponde.
+function crearTarjetaTicket(ticket, campos) {
 	const article = document.createElement("article");
 	article.className = "ticket ticket-" + ticket.prioridad.toLowerCase();
 
 	const encabezado = crearElemento("div", undefined, "ticket-encabezado");
-	const titulo = textoVisible(datos, ticket, "titulo", usuario);
-	const h3 = crearElemento("h3", `#${ticket.id} · ${titulo}`);
-	if (titulo !== ticket.titulo) h3.classList.add("confidencial");
+	const h3 = crearElemento("h3", `#${ticket.id} · ${ticket.titulo}`);
+	if (ticket.enmascarado) h3.classList.add("confidencial");
 
 	const insignias = crearElemento("div", undefined, "ticket-insignias");
 	insignias.append(crearEtiquetaPrioridad(ticket.prioridad), crearEtiquetaEstado(ticket.estado));
@@ -182,10 +181,10 @@ function crearTarjetaTicket(datos, ticket, usuario, campos) {
 	return article;
 }
 
-function crearComentario(datos, comentario) {
+function crearComentario(comentario) {
 	const div = crearElemento("div", undefined, "comentario");
 	div.append(
-		crearElemento("small", `${nombreUsuario(datos, comentario.autorId)} · ${formatearFecha(comentario.fecha)}`),
+		crearElemento("small", `${comentario.autor} · ${formatearFecha(comentario.fecha)}`),
 		comentario.texto
 	);
 	return div;
@@ -276,28 +275,11 @@ async function renderizarPageHome(usuario) {
 	const listaServicios = document.querySelector("#lista-servicios");
 	if (!listaServicios) return;
 
-	const datos = await obtenerDatosGlobales();
-
 	document.querySelector("#bienvenida").textContent = usuario
 		? `Hola, ${usuario.nombre.split(" ")[0]}`
 		: "Bienvenido/a a TechSolve";
 
-	// Aviso de mantenimiento programado
-	const aviso = document.querySelector("#aviso-mantenimiento");
-	if (usuario && datos.avisoMantenimiento.activo) {
-		aviso.append(
-			crearElemento("h3", "⚠ Mantenimiento programado"),
-			crearElemento("p", datos.avisoMantenimiento.mensaje)
-		);
-		aviso.hidden = false;
-	}
-
-	// Notificaciones pendientes del empleado
-	if (usuario && usuario.rol === "empleado") {
-		renderizarNotificaciones(datos, usuario);
-	}
-
-	// Servicios según el rol
+	// Servicios según el rol (es parte de la interfaz, no del negocio)
 	const servicios = SERVICIOS_POR_ROL[usuario ? usuario.rol : "visitante"];
 	servicios.forEach(servicio => {
 		const link = crearElemento("a", undefined, "tarjeta tarjeta-link");
@@ -306,18 +288,42 @@ async function renderizarPageHome(usuario) {
 		listaServicios.append(link);
 	});
 
-	// Categorías de soporte
-	const listaCategorias = document.querySelector("#lista-categorias");
-	datos.categorias.forEach(categoria => {
-		const li = document.createElement("li");
-		li.append(crearElemento("strong", categoria.nombre), categoria.descripcion);
-		listaCategorias.append(li);
-	});
+	try {
+		const [aviso, categorias] = await Promise.all([
+			api("/api/aviso-mantenimiento"),
+			api("/api/categorias")
+		]);
+
+		// Aviso de mantenimiento programado
+		const contenedorAviso = document.querySelector("#aviso-mantenimiento");
+		if (usuario && aviso.activo) {
+			contenedorAviso.append(
+				crearElemento("h3", "⚠ Mantenimiento programado"),
+				crearElemento("p", aviso.mensaje)
+			);
+			contenedorAviso.hidden = false;
+		}
+
+		// Categorías de soporte
+		const listaCategorias = document.querySelector("#lista-categorias");
+		categorias.forEach(categoria => {
+			const li = document.createElement("li");
+			li.append(crearElemento("strong", categoria.nombre), categoria.descripcion);
+			listaCategorias.append(li);
+		});
+
+		// Notificaciones pendientes del empleado
+		if (usuario && usuario.rol === "empleado") {
+			await renderizarNotificaciones();
+		}
+	} catch (error) {
+		mostrarError(error.message);
+	}
 }
 
-function renderizarNotificaciones(datos, usuario) {
+async function renderizarNotificaciones() {
 	const contenedor = document.querySelector("#notificaciones");
-	const pendientes = datos.notificaciones.filter(n => n.empleadoId === usuario.id && !n.leida);
+	const pendientes = await api("/api/notificaciones");
 	if (pendientes.length === 0) return;
 
 	contenedor.append(crearElemento("h3", "Mensajes del soporte técnico"));
@@ -329,11 +335,14 @@ function renderizarNotificaciones(datos, usuario) {
 
 		const boton = crearElemento("button", "Marcar como leído", "boton boton-secundario boton-chico");
 		boton.type = "button";
-		boton.addEventListener("click", () => {
-			buscarPorId(datos.notificaciones, notificacion.id).leida = true;
-			guardarDatosGlobales(datos);
-			item.remove();
-			if (!contenedor.querySelector(".notificacion-item")) contenedor.hidden = true;
+		boton.addEventListener("click", async () => {
+			try {
+				await api(`/api/notificaciones/${notificacion.id}`, { method: "PATCH", body: { leida: true } });
+				item.remove();
+				if (!contenedor.querySelector(".notificacion-item")) contenedor.hidden = true;
+			} catch (error) {
+				mostrarError(error.message);
+			}
 		});
 
 		item.append(texto, boton);
@@ -351,45 +360,50 @@ async function renderizarPageLogin() {
 	const formulario = document.querySelector("#form-login");
 	if (!formulario) return;
 
-	const datos = await obtenerDatosGlobales();
 	const mensaje = document.querySelector("#mensaje-login");
 	const inputEmail = document.querySelector("#email");
 	const inputPassword = document.querySelector("#password");
+	const botonIngresar = formulario.querySelector("button[type=submit]");
 
-	// Usuarios de prueba generados desde datos.json
-	const listaDemo = document.querySelector("#usuarios-demo");
-	datos.usuarios.forEach(usuario => {
-		const boton = crearElemento("button", undefined, "boton");
-		boton.type = "button";
-		boton.append(crearElemento("span", usuario.email), crearElemento("span", usuario.rol, "insignia"));
-		boton.addEventListener("click", () => {
-			inputEmail.value = usuario.email;
-			inputPassword.value = usuario.password;
-			inputPassword.focus();
-		});
-		const li = document.createElement("li");
-		li.append(boton);
-		listaDemo.append(li);
-	});
-
-	formulario.addEventListener("submit", event => {
+	formulario.addEventListener("submit", async event => {
 		event.preventDefault();
+		mensaje.textContent = "";
+		botonIngresar.disabled = true;
+		botonIngresar.textContent = "Ingresando...";
 
-		const email = inputEmail.value.trim().toLowerCase();
-		const password = inputPassword.value;
-
-		const usuario = datos.usuarios.find(u => u.email === email && u.password === password);
-
-		if (!usuario) {
-			mensaje.textContent = "Usuario o contraseña incorrectos.";
-			return;
+		try {
+			const sesion = await api("/api/login", {
+				method: "POST",
+				body: { email: inputEmail.value.trim(), password: inputPassword.value }
+			});
+			guardarSesion(sesion);
+			window.location.href = resolverUrlRelativa("index.html");
+		} catch (error) {
+			mensaje.textContent = error.message;
+			botonIngresar.disabled = false;
+			botonIngresar.textContent = "Ingresar";
 		}
-
-		// Se guarda el usuario sin la contraseña
-		const { password: _, ...usuarioSinPassword } = usuario;
-		guardarUsuarioActual(usuarioSinPassword);
-		window.location.href = resolverUrlRelativa("index.html");
 	});
+
+	// Usuarios de prueba (el backend no manda contraseñas)
+	try {
+		const usuarios = await api("/api/usuarios-demo");
+		const listaDemo = document.querySelector("#usuarios-demo");
+		usuarios.forEach(usuario => {
+			const boton = crearElemento("button", undefined, "boton");
+			boton.type = "button";
+			boton.append(crearElemento("span", usuario.email), crearElemento("span", usuario.rol, "insignia"));
+			boton.addEventListener("click", () => {
+				inputEmail.value = usuario.email;
+				inputPassword.focus();
+			});
+			const li = document.createElement("li");
+			li.append(boton);
+			listaDemo.append(li);
+		});
+	} catch (error) {
+		mensaje.textContent = error.message;
+	}
 }
 
 // ============================================================
@@ -401,28 +415,35 @@ async function renderizarPageSolicitarTicket(usuario) {
 	const formulario = document.querySelector("#form-ticket");
 	if (!formulario) return;
 
-	const datos = await obtenerDatosGlobales();
 	const pasoCategoria = document.querySelector("#paso-categoria");
 
-	// Flujo alternativo A1: el empleado ya tiene 3 tickets abiertos
-	const abiertos = datos.tickets.filter(t => t.empleadoId === usuario.id && t.estado === "Abierto");
-	if (abiertos.length >= MAX_TICKETS_ABIERTOS) {
-		document.querySelector("#texto-limite").textContent =
-			`Ya tenés ${abiertos.length} tickets con estado "Abierto". Resolvé los tickets existentes antes de abrir uno nuevo.`;
-		document.querySelector("#mensaje-limite").hidden = false;
-		pasoCategoria.hidden = true;
+	let categorias, equipos, activos;
+	try {
+		[categorias, equipos, activos] = await Promise.all([
+			api("/api/categorias"),
+			api("/api/equipos?tipo=Hardware"),
+			api("/api/mis-tickets?estado=activos")
+		]);
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
+
+	// Flujo alternativo A1: aviso anticipado si ya tiene 3 tickets abiertos.
+	// Igual el backend es el que valida la regla al crear el ticket.
+	const abiertos = activos.filter(t => t.estado === "Abierto");
+	if (abiertos.length >= 3) {
+		mostrarLimite(`Ya tenés ${abiertos.length} tickets con estado "Abierto". Resolvé los tickets existentes antes de abrir uno nuevo.`);
 		return;
 	}
 
 	document.querySelector("#nombre").value = usuario.nombre;
 
-	const inputCategoria = document.createElement("input");
-	inputCategoria.type = "hidden";
-	formulario.append(inputCategoria);
+	let categoriaElegida = null;
 
 	// Paso 2: el sistema presenta las categorías disponibles
 	const opciones = document.querySelector("#opciones-categoria");
-	datos.categorias.forEach(categoria => {
+	categorias.forEach(categoria => {
 		const boton = crearElemento("button", undefined, "opcion-categoria");
 		boton.type = "button";
 		boton.append(crearElemento("strong", categoria.nombre), crearElemento("span", categoria.descripcion));
@@ -432,13 +453,11 @@ async function renderizarPageSolicitarTicket(usuario) {
 
 	// Equipos homologados para las fallas de hardware
 	const selectEquipo = document.querySelector("#equipo");
-	datos.equipos
-		.filter(equipo => equipo.tipo === "Hardware")
-		.forEach(equipo => {
-			const option = crearElemento("option", `${equipo.nombre} (${equipo.modelo})`);
-			option.value = equipo.id;
-			selectEquipo.append(option);
-		});
+	equipos.forEach(equipo => {
+		const option = crearElemento("option", `${equipo.nombre} (${equipo.modelo})`);
+		option.value = equipo.id;
+		selectEquipo.append(option);
+	});
 
 	const inputTitulo = document.querySelector("#titulo");
 	const inputDescripcion = document.querySelector("#descripcion");
@@ -446,7 +465,7 @@ async function renderizarPageSolicitarTicket(usuario) {
 
 	// Paso 3 y 4: al elegir la categoría se muestra su formulario
 	function elegirCategoria(categoria) {
-		inputCategoria.value = categoria.id;
+		categoriaElegida = categoria;
 		document.querySelector("#categoria-elegida").textContent = categoria.nombre;
 		document.querySelector("#ayuda-categoria").textContent = categoria.descripcion;
 		inputTitulo.placeholder = categoria.placeholderTitulo || "";
@@ -465,17 +484,26 @@ async function renderizarPageSolicitarTicket(usuario) {
 		marcarPaso(1);
 	});
 
-	// Paso 6: prioridad asignada automáticamente según el título
+	// Paso 6: el backend calcula la prioridad según el título
 	const prioridadCalculada = document.querySelector("#prioridad-calculada");
+	let esperaPrioridad;
 	inputTitulo.addEventListener("input", () => {
+		clearTimeout(esperaPrioridad);
 		if (!inputTitulo.value.trim()) {
 			prioridadCalculada.textContent = "Escribí un título";
 			prioridadCalculada.className = "insignia";
 			return;
 		}
-		const prioridad = calcularPrioridad(datos, inputTitulo.value);
-		prioridadCalculada.textContent = prioridad;
-		prioridadCalculada.className = "prioridad prioridad-" + prioridad.toLowerCase();
+		esperaPrioridad = setTimeout(async () => {
+			try {
+				const { prioridad } = await api(`/api/prioridad?titulo=${encodeURIComponent(inputTitulo.value)}`);
+				prioridadCalculada.textContent = prioridad;
+				prioridadCalculada.className = "prioridad prioridad-" + prioridad.toLowerCase();
+			} catch (error) {
+				prioridadCalculada.textContent = "No disponible";
+				prioridadCalculada.className = "insignia";
+			}
+		}, 300);
 	});
 
 	// Flujo alternativo A0: cancelación
@@ -485,50 +513,47 @@ async function renderizarPageSolicitarTicket(usuario) {
 	});
 
 	const mensaje = document.querySelector("#mensaje-ticket");
+	const cargando = document.querySelector("#cargando");
+	const botones = formulario.querySelectorAll("button");
 
-	// Paso 7 y 8: confirmación y registro del ticket
-	formulario.addEventListener("submit", event => {
+	// Paso 7 y 8: confirmación y registro del ticket en el backend
+	formulario.addEventListener("submit", async event => {
 		event.preventDefault();
+		mensaje.textContent = "";
 
-		const titulo = inputTitulo.value.trim();
-		const descripcion = inputDescripcion.value.trim();
-
-		if (!titulo || !descripcion) {
+		if (!inputTitulo.value.trim() || !inputDescripcion.value.trim()) {
 			mensaje.textContent = "Completá el título y la descripción.";
 			return;
 		}
 
-		mensaje.textContent = "";
-		const categoria = buscarPorId(datos.categorias, Number(inputCategoria.value));
-
-		const nuevoId = Math.max(...datos.tickets.map(t => t.id), 1000) + 1;
-
-		const nuevoTicket = {
-			id: nuevoId,
-			empleadoId: usuario.id,
-			tecnicoId: null,
-			categoriaId: categoria.id,
-			titulo: titulo,
-			descripcion: descripcion,
-			prioridad: calcularPrioridad(datos, titulo),
-			estado: "Abierto",
-			fecha: new Date().toISOString(),
-			comentarios: [],
-			equipoId: categoria.pideEquipo ? Number(selectEquipo.value) : null
-		};
-
 		// Indicador de carga mientras se registra (flujo alternativo A2)
-		document.querySelector("#cargando").hidden = false;
-		formulario.querySelectorAll("button").forEach(boton => {
-			boton.disabled = true;
-		});
+		cargando.hidden = false;
+		botones.forEach(boton => { boton.disabled = true; });
 
-		setTimeout(() => {
-			datos.tickets.push(nuevoTicket);
-			guardarDatosGlobales(datos);
-			window.location.href = resolverUrlRelativa(`pages/confirmacion.html?id=${nuevoId}`);
-		}, 700);
+		try {
+			const ticket = await api("/api/tickets", {
+				method: "POST",
+				body: {
+					categoriaId: categoriaElegida.id,
+					titulo: inputTitulo.value.trim(),
+					descripcion: inputDescripcion.value.trim(),
+					equipoId: categoriaElegida.pideEquipo ? Number(selectEquipo.value) : null
+				}
+			});
+			window.location.href = resolverUrlRelativa(`pages/confirmacion.html?id=${ticket.id}`);
+		} catch (error) {
+			cargando.hidden = true;
+			botones.forEach(boton => { boton.disabled = false; });
+			mensaje.textContent = error.message;
+		}
 	});
+}
+
+function mostrarLimite(texto) {
+	document.querySelector("#texto-limite").textContent = texto;
+	document.querySelector("#mensaje-limite").hidden = false;
+	document.querySelector("#paso-categoria").hidden = true;
+	document.querySelector("#form-ticket").hidden = true;
 }
 
 function marcarPaso(numero) {
@@ -543,16 +568,17 @@ function marcarPaso(numero) {
 // PÁGINA: CONFIRMACIÓN (comprobante digital)
 // ============================================================
 
-async function renderizarPageConfirmacion(usuario) {
+async function renderizarPageConfirmacion() {
 	const contenedor = document.querySelector("#detalle-confirmacion");
 	if (!contenedor) return;
 
-	const datos = await obtenerDatosGlobales();
 	const id = Number(new URLSearchParams(window.location.search).get("id"));
-	const ticket = datos.tickets.find(t => t.id === id && t.empleadoId === usuario.id);
 
-	if (!ticket) {
-		contenedor.append(crearElemento("p", "No se encontró el ticket solicitado.", "mensaje-error"));
+	let ticket;
+	try {
+		ticket = await api(`/api/tickets/${id}`);
+	} catch (error) {
+		contenedor.append(crearElemento("p", error.message, "mensaje-error"));
 		return;
 	}
 
@@ -563,16 +589,14 @@ async function renderizarPageConfirmacion(usuario) {
 
 	const lista = crearElemento("ul", undefined, "datos-comprobante");
 	const filas = [
-		["Categoría", nombreCategoria(datos, ticket.categoriaId)],
+		["Categoría", ticket.categoria],
 		["Título", ticket.titulo],
 		["Prioridad", crearEtiquetaPrioridad(ticket.prioridad)],
 		["Estado", crearEtiquetaEstado(ticket.estado)],
 		["Fecha", formatearFecha(ticket.fecha)]
 	];
-	if (ticket.equipoId) {
-		const equipo = buscarPorId(datos.equipos, ticket.equipoId);
-		filas.splice(1, 0, ["Equipo", equipo ? equipo.nombre : "-"]);
-	}
+	if (ticket.equipo) filas.splice(1, 0, ["Equipo", ticket.equipo]);
+
 	filas.forEach(([etiqueta, valor]) => {
 		const li = document.createElement("li");
 		li.append(crearElemento("span", etiqueta), valor instanceof Node ? valor : crearElemento("span", valor));
@@ -587,15 +611,17 @@ async function renderizarPageConfirmacion(usuario) {
 
 const ESTADOS_COMENTABLES = ["Abierto", "Asignado", "En Progreso"];
 
-async function renderizarPageMisTickets(usuario) {
+async function renderizarPageMisTickets() {
 	const tabla = document.querySelector("#tabla-mis-tickets");
 	if (!tabla) return;
 
-	const datos = await obtenerDatosGlobales();
-
-	const activos = datos.tickets
-		.filter(t => t.empleadoId === usuario.id && t.estado !== "Cerrado")
-		.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+	let activos;
+	try {
+		activos = await api("/api/mis-tickets?estado=activos");
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
 
 	if (activos.length === 0) {
 		document.querySelector("#sin-tickets").hidden = false;
@@ -609,11 +635,11 @@ async function renderizarPageMisTickets(usuario) {
 	activos.forEach(ticket => {
 		tabla.append(crearFilaTabla([
 			`#${ticket.id}`,
-			nombreCategoria(datos, ticket.categoriaId),
+			ticket.categoria,
 			ticket.titulo,
 			crearEtiquetaPrioridad(ticket.prioridad),
 			crearEtiquetaEstado(ticket.estado),
-			nombreUsuario(datos, ticket.tecnicoId)
+			ticket.tecnico || "Sin asignar"
 		]));
 	});
 
@@ -625,7 +651,7 @@ async function renderizarPageMisTickets(usuario) {
 			const article = crearElemento("article");
 			article.style.marginBottom = "14px";
 			article.append(crearElemento("h3", `#${ticket.id} · ${ticket.titulo}`));
-			ticket.comentarios.forEach(comentario => article.append(crearComentario(datos, comentario)));
+			ticket.comentarios.forEach(comentario => article.append(crearComentario(comentario)));
 			listaComentarios.append(article);
 		});
 
@@ -645,21 +671,18 @@ async function renderizarPageMisTickets(usuario) {
 		return;
 	}
 
-	formulario.addEventListener("submit", event => {
+	formulario.addEventListener("submit", async event => {
 		event.preventDefault();
 
 		const texto = document.querySelector("#comment").value.trim();
 		if (!texto) return;
 
-		const ticket = buscarPorId(datos.tickets, Number(selectTicket.value));
-		ticket.comentarios.push({
-			autorId: usuario.id,
-			texto: texto,
-			fecha: new Date().toISOString()
-		});
-
-		guardarDatosGlobales(datos);
-		window.location.reload();
+		try {
+			await api(`/api/tickets/${selectTicket.value}/comentarios`, { method: "POST", body: { texto } });
+			window.location.reload();
+		} catch (error) {
+			mostrarError(error.message);
+		}
 	});
 }
 
@@ -667,15 +690,17 @@ async function renderizarPageMisTickets(usuario) {
 // PÁGINA: HISTORIAL (empleado)
 // ============================================================
 
-async function renderizarPageHistorial(usuario) {
+async function renderizarPageHistorial() {
 	const lista = document.querySelector("#lista-historial");
 	if (!lista) return;
 
-	const datos = await obtenerDatosGlobales();
-
-	const cerrados = datos.tickets
-		.filter(t => t.empleadoId === usuario.id && t.estado === "Cerrado")
-		.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+	let cerrados;
+	try {
+		cerrados = await api("/api/mis-tickets?estado=cerrados");
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
 
 	if (cerrados.length === 0) {
 		lista.append(crearElemento("p", "No se registran tickets para este usuario.", "alerta tarjeta"));
@@ -683,9 +708,9 @@ async function renderizarPageHistorial(usuario) {
 	}
 
 	cerrados.forEach(ticket => {
-		lista.append(crearTarjetaTicket(datos, ticket, usuario, [
-			["Categoría", nombreCategoria(datos, ticket.categoriaId)],
-			["Técnico", nombreUsuario(datos, ticket.tecnicoId)],
+		lista.append(crearTarjetaTicket(ticket, [
+			["Categoría", ticket.categoria],
+			["Técnico", ticket.tecnico || "Sin asignar"],
 			["Fecha", formatearFecha(ticket.fecha)],
 			["Descripción", ticket.descripcion]
 		]));
@@ -696,28 +721,39 @@ async function renderizarPageHistorial(usuario) {
 // PÁGINA: PANEL DEL TÉCNICO
 // ============================================================
 
-async function renderizarPagePanelTecnico(usuario) {
+async function renderizarPagePanelTecnico() {
 	const lista = document.querySelector("#lista-tickets-tecnico");
 	if (!lista) return;
 
-	const datos = await obtenerDatosGlobales();
+	let estados, equipos;
+	try {
+		[estados, equipos] = await Promise.all([api("/api/estados"), api("/api/equipos")]);
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
 
 	const filtro = document.querySelector("#filtro-panel");
-	filtro.addEventListener("change", () => dibujarTicketsTecnico(datos, usuario, filtro.value));
+	filtro.addEventListener("change", () => dibujarTicketsTecnico(estados));
 
-	dibujarTicketsTecnico(datos, usuario, filtro.value);
-	renderizarEquiposHomologados(datos);
+	dibujarTicketsTecnico(estados);
+	renderizarEquiposHomologados(equipos);
 }
 
-function dibujarTicketsTecnico(datos, usuario, filtro) {
+async function dibujarTicketsTecnico(estados) {
 	const lista = document.querySelector("#lista-tickets-tecnico");
-	lista.innerHTML = "";
+	const filtro = document.querySelector("#filtro-panel").value;
 
-	// Tickets entrantes ordenados por urgencia (mayor a menor)
-	const tickets = datos.tickets
-		.filter(t => t.estado !== "Cerrado")
-		.filter(t => filtro === "todos" || t.tecnicoId === usuario.id || t.tecnicoId === null)
-		.sort((a, b) => valorPrioridad(b.prioridad) - valorPrioridad(a.prioridad) || new Date(a.fecha) - new Date(b.fecha));
+	let tickets;
+	try {
+		// El backend los devuelve ordenados por urgencia y enmascarados si corresponde
+		tickets = await api(`/api/tickets?filtro=${filtro}`);
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
+
+	lista.innerHTML = "";
 
 	if (tickets.length === 0) {
 		lista.append(crearElemento("p", "No hay tickets activos.", "tarjeta"));
@@ -726,38 +762,34 @@ function dibujarTicketsTecnico(datos, usuario, filtro) {
 
 	tickets.forEach(ticket => {
 		const campos = [
-			["Empleado", nombreUsuario(datos, ticket.empleadoId)],
-			["Categoría", nombreCategoria(datos, ticket.categoriaId)],
-			["Técnico", nombreUsuario(datos, ticket.tecnicoId)],
+			["Empleado", ticket.empleado],
+			["Categoría", ticket.categoria],
+			["Técnico", ticket.tecnico || "Sin asignar"],
 			["Abierto el", formatearFecha(ticket.fecha)]
 		];
-		if (ticket.equipoId) {
-			const equipo = buscarPorId(datos.equipos, ticket.equipoId);
-			if (equipo) campos.push(["Equipo", `${equipo.nombre} (${equipo.modelo})`]);
-		}
+		if (ticket.equipo) campos.push(["Equipo", ticket.equipo]);
 
-		const article = crearTarjetaTicket(datos, ticket, usuario, campos);
+		const article = crearTarjetaTicket(ticket, campos);
 
-		const descripcion = textoVisible(datos, ticket, "descripcion", usuario);
-		const pDescripcion = crearParrafoDato("Descripción", descripcion);
-		if (descripcion !== ticket.descripcion) pDescripcion.classList.add("confidencial");
+		const pDescripcion = crearParrafoDato("Descripción", ticket.descripcion);
+		if (ticket.enmascarado) pDescripcion.classList.add("confidencial");
 		article.append(pDescripcion);
 
-		ticket.comentarios.forEach(comentario => article.append(crearComentario(datos, comentario)));
+		ticket.comentarios.forEach(comentario => article.append(crearComentario(comentario)));
 
-		article.append(crearFormularioEstado(datos, ticket, usuario));
-		article.append(crearFormularioNotificacion(datos, ticket));
+		article.append(crearFormularioEstado(ticket, estados));
+		article.append(crearFormularioNotificacion(ticket));
 
 		lista.append(article);
 	});
 }
 
-function crearFormularioEstado(datos, ticket, usuario) {
+function crearFormularioEstado(ticket, estados) {
 	const form = crearElemento("form", undefined, "form-inline");
 
 	const select = document.createElement("select");
 	select.setAttribute("aria-label", "Nuevo estado");
-	datos.estados
+	estados
 		.filter(estado => estado !== "Abierto")
 		.forEach(estado => {
 			const option = crearElemento("option", estado);
@@ -769,22 +801,26 @@ function crearFormularioEstado(datos, ticket, usuario) {
 	const boton = crearElemento("button", "Cambiar estado", "boton boton-chico");
 	boton.type = "submit";
 
-	form.append(select, boton);
+	const resultado = crearElemento("span", "", "mensaje-error");
 
-	form.addEventListener("submit", event => {
+	form.append(select, boton, resultado);
+
+	form.addEventListener("submit", async event => {
 		event.preventDefault();
-		const original = buscarPorId(datos.tickets, ticket.id);
-		original.estado = select.value;
-		// Si nadie lo tenía, queda asignado al técnico que lo toma
-		if (original.tecnicoId === null) original.tecnicoId = usuario.id;
-		guardarDatosGlobales(datos);
-		dibujarTicketsTecnico(datos, usuario, document.querySelector("#filtro-panel").value);
+		boton.disabled = true;
+		try {
+			await api(`/api/tickets/${ticket.id}/estado`, { method: "PATCH", body: { estado: select.value } });
+			dibujarTicketsTecnico(estados);
+		} catch (error) {
+			resultado.textContent = error.message;
+			boton.disabled = false;
+		}
 	});
 
 	return form;
 }
 
-function crearFormularioNotificacion(datos, ticket) {
+function crearFormularioNotificacion(ticket) {
 	const form = crearElemento("form", undefined, "form-inline");
 
 	const input = document.createElement("input");
@@ -796,34 +832,31 @@ function crearFormularioNotificacion(datos, ticket) {
 	const boton = crearElemento("button", "Notificar", "boton boton-secundario boton-chico");
 	boton.type = "submit";
 
-	const confirmacion = crearElemento("span", "", "mensaje-ok");
+	const resultado = crearElemento("span", "", "mensaje-ok");
 
-	form.append(input, boton, confirmacion);
+	form.append(input, boton, resultado);
 
-	form.addEventListener("submit", event => {
+	form.addEventListener("submit", async event => {
 		event.preventDefault();
-		const nuevoId = Math.max(0, ...datos.notificaciones.map(n => n.id)) + 1;
-		datos.notificaciones.push({
-			id: nuevoId,
-			empleadoId: ticket.empleadoId,
-			ticketId: ticket.id,
-			mensaje: input.value.trim(),
-			fecha: new Date().toISOString(),
-			leida: false
-		});
-		guardarDatosGlobales(datos);
-		input.value = "";
-		confirmacion.textContent = "✓ Enviada";
+		try {
+			await api(`/api/tickets/${ticket.id}/notificaciones`, { method: "POST", body: { mensaje: input.value.trim() } });
+			input.value = "";
+			resultado.className = "mensaje-ok";
+			resultado.textContent = "✓ Enviada";
+		} catch (error) {
+			resultado.className = "mensaje-error";
+			resultado.textContent = error.message;
+		}
 	});
 
 	return form;
 }
 
-function renderizarEquiposHomologados(datos) {
+function renderizarEquiposHomologados(equipos) {
 	const tabla = document.querySelector("#tabla-equipos");
 	tabla.append(crearFilaTabla(["Nombre", "Versión / Modelo", "Tipo", "Homologación"], true));
 
-	datos.equipos.forEach(equipo => {
+	equipos.forEach(equipo => {
 		const estado = equipo.homologado
 			? crearElemento("span", "Homologado", "estado estado-cerrado")
 			: crearElemento("span", "No homologado", "prioridad prioridad-alta");
@@ -835,19 +868,37 @@ function renderizarEquiposHomologados(datos) {
 // PÁGINA: TABLERO DEL GERENTE
 // ============================================================
 
-async function renderizarPageTablero(usuario) {
+async function renderizarPageTablero() {
 	const resumen = document.querySelector("#resumen-tablero");
 	if (!resumen) return;
 
-	const datos = await obtenerDatosGlobales();
-	const activos = datos.tickets.filter(t => t.estado !== "Cerrado");
+	document.querySelector("#reiniciar-datos").addEventListener("click", async () => {
+		try {
+			await api("/api/reiniciar", { method: "POST" });
+			irAlLogin();
+		} catch (error) {
+			mostrarError(error.message);
+		}
+	});
+
+	let tablero, criticos, confidenciales;
+	try {
+		[tablero, criticos, confidenciales] = await Promise.all([
+			api("/api/tablero"),
+			api("/api/tablero/criticos"),
+			api("/api/tablero/confidenciales")
+		]);
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
 
 	// Indicadores generales
 	[
-		["Tickets totales", datos.tickets.length],
-		["Activos", activos.length],
-		["Cerrados", datos.tickets.length - activos.length],
-		["Sin asignar", activos.filter(t => t.tecnicoId === null).length]
+		["Tickets totales", tablero.resumen.total],
+		["Activos", tablero.resumen.activos],
+		["Cerrados", tablero.resumen.cerrados],
+		["Sin asignar", tablero.resumen.sinAsignar]
 	].forEach(([titulo, valor]) => {
 		const article = crearElemento("article", undefined, "indicador");
 		article.append(crearElemento("h3", titulo), crearElemento("p", valor, "numero"));
@@ -856,15 +907,8 @@ async function renderizarPageTablero(usuario) {
 
 	// Categorías ordenadas por frecuencia
 	const barras = document.querySelector("#barras-categorias");
-	const frecuencias = datos.categorias
-		.map(categoria => ({
-			nombre: categoria.nombre,
-			cantidad: datos.tickets.filter(t => t.categoriaId === categoria.id).length
-		}))
-		.sort((a, b) => b.cantidad - a.cantidad);
-	const maximo = Math.max(1, ...frecuencias.map(f => f.cantidad));
-
-	frecuencias.forEach(fila => {
+	const maximo = Math.max(1, ...tablero.categorias.map(c => c.cantidad));
+	tablero.categorias.forEach(fila => {
 		const contenedor = document.createElement("div");
 		const texto = crearElemento("div", undefined, "barra-fila");
 		texto.append(crearElemento("span", fila.nombre), crearElemento("strong", fila.cantidad));
@@ -879,44 +923,32 @@ async function renderizarPageTablero(usuario) {
 	// Carga de trabajo por técnico
 	const tablaTecnicos = document.querySelector("#tabla-tecnicos");
 	tablaTecnicos.append(crearFilaTabla(["Técnico", "Nivel", "Activos"], true));
-	datos.usuarios
-		.filter(u => u.rol === "tecnico")
-		.forEach(tecnico => {
-			const cantidad = activos.filter(t => t.tecnicoId === tecnico.id).length;
-			tablaTecnicos.append(crearFilaTabla([tecnico.nombre, tecnico.nivel, cantidad]));
-		});
+	tablero.tecnicos.forEach(tecnico => {
+		tablaTecnicos.append(crearFilaTabla([tecnico.nombre, tecnico.nivel, tecnico.activos]));
+	});
 
 	// Incidentes críticos
-	const criticos = document.querySelector("#lista-criticos");
-	const altos = activos.filter(t => t.prioridad === "Alta");
-	if (altos.length === 0) {
-		criticos.append(crearElemento("p", "No hay incidentes críticos activos en este momento.", "tarjeta"));
+	const listaCriticos = document.querySelector("#lista-criticos");
+	if (criticos.length === 0) {
+		listaCriticos.append(crearElemento("p", "No hay incidentes críticos activos en este momento.", "tarjeta"));
 	}
-	altos.forEach(ticket => {
-		const horas = Math.floor((Date.now() - new Date(ticket.fecha)) / 3600000);
-		criticos.append(crearTarjetaTicket(datos, ticket, usuario, [
-			["Técnico asignado", nombreUsuario(datos, ticket.tecnicoId)],
-			["Tiempo desde la apertura", `${horas} horas`]
+	criticos.forEach(ticket => {
+		listaCriticos.append(crearTarjetaTicket(ticket, [
+			["Técnico asignado", ticket.tecnico || "Sin asignar"],
+			["Tiempo desde la apertura", `${ticket.horasAbierto} horas`]
 		]));
 	});
 
-	// Información confidencial (sólo visible para el gerente)
-	const confidenciales = document.querySelector("#lista-confidenciales");
-	const listaConf = datos.tickets.filter(t => esConfidencial(datos, t));
-	if (listaConf.length === 0) {
-		confidenciales.append(crearElemento("p", "No hay tickets con información confidencial.", "tarjeta"));
+	// Información confidencial (sólo la ve el gerente)
+	const listaConfidenciales = document.querySelector("#lista-confidenciales");
+	if (confidenciales.length === 0) {
+		listaConfidenciales.append(crearElemento("p", "No hay tickets con información confidencial.", "tarjeta"));
 	}
-	listaConf.forEach(ticket => {
-		confidenciales.append(crearTarjetaTicket(datos, ticket, usuario, [
-			["Empleado", nombreUsuario(datos, ticket.empleadoId)],
+	confidenciales.forEach(ticket => {
+		listaConfidenciales.append(crearTarjetaTicket(ticket, [
+			["Empleado", ticket.empleado],
 			["Descripción", ticket.descripcion]
 		]));
-	});
-
-	// Restablecer los datos de prueba
-	document.querySelector("#reiniciar-datos").addEventListener("click", () => {
-		localStorage.removeItem(STORAGE_KEY);
-		window.location.reload();
 	});
 }
 
@@ -937,9 +969,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	if (!usuario) return;
 
 	renderizarPageSolicitarTicket(usuario);
-	renderizarPageConfirmacion(usuario);
-	renderizarPageMisTickets(usuario);
-	renderizarPageHistorial(usuario);
-	renderizarPagePanelTecnico(usuario);
-	renderizarPageTablero(usuario);
+	renderizarPageConfirmacion();
+	renderizarPageMisTickets();
+	renderizarPageHistorial();
+	renderizarPagePanelTecnico();
+	renderizarPageTablero();
 });
