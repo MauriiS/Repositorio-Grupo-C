@@ -1,0 +1,18 @@
+# Configuración para publicar en Render (Blueprint).
+# Crea el backend como Web Service y el frontend como Static Site.
+services:
+  - type: web
+    name: techsolve-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+
+  - type: web
+    name: techsolve-front
+    runtime: static
+    rootDir: frontend
+    buildCommand: ""
+    staticPublishPath: .

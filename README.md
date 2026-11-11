@@ -123,6 +123,14 @@ Todos los cambios (tickets nuevos, comentarios, estados, notificaciones) se guar
 
 \## Hito Final — MVP con backend
 
+\### Sistema publicado
+
+\- \*\*Frontend:\*\* _(completar con la URL del Static Site de Render)_
+
+\- \*\*API:\*\* _(completar con la URL del Web Service de Render)_
+
+Usuarios de prueba: los de la tabla del Hito 3, todos con contraseña `1234`. El backend gratis de Render se duerme si no se usa: el primer ingreso puede tardar hasta un minuto.
+
 \### Estructura del proyecto
 
 ```
@@ -138,7 +146,8 @@ Repositorio-Grupo-C/
 │   ├── js/
 │   ├── pages/
 │   └── assets/
-├── documentacion/    relevamiento, prototipo del Hito 2 y archivos de los integrantes
+├── documentacion/    relevamiento, anotaciones, prototipo del Hito 2 y archivos de los integrantes
+├── render.yaml       configuración para publicar en Render
 └── README.md
 ```
 
@@ -202,3 +211,21 @@ El frontend ya no guarda datos del negocio: todo se pide a la API con `fetch()`.
 \- \*\*Comentarios sólo en tickets activos:\*\* se aceptan en estado "Abierto", "Asignado" o "En Progreso".
 
 \- \*\*Equipo obligatorio en fallas de hardware:\*\* la categoría "Falla de Hardware" exige indicar un equipo homologado.
+
+\### Publicación en Render
+
+El repo tiene un `render.yaml` que crea los dos servicios. Opción rápida: en Render, \*\*New → Blueprint\*\*, elegir este repositorio y confirmar.
+
+Para crearlos a mano:
+
+1. \*\*Backend (Web Service):\*\* New → Web Service → este repo. Root Directory: `backend`. Build Command: `npm install`. Start Command: `npm start`. Plan: Free.
+
+2. \*\*Frontend (Static Site):\*\* New → Static Site → este repo. Root Directory: `frontend`. Build Command: vacío. Publish Directory: `.`
+
+3. Copiar la URL que Render le da al backend y ponerla en `API_PRODUCCION` dentro de `frontend/js/config.js` (si no es `https://techsolve-api.onrender.com`). Al hacer push, Render vuelve a publicar el frontend solo.
+
+4. Opcional: en el backend, agregar la variable de entorno `CORS_ORIGIN` con la URL del frontend para que la API sólo acepte pedidos desde ahí.
+
+5. Completar los links de \*\*Sistema publicado\*\* en este README.
+
+Los datos están en memoria: cada vez que Render reinicia o duerme el backend, vuelven a los datos de prueba de `backend/data/datos.json`.

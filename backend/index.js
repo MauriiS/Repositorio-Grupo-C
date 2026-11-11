@@ -14,7 +14,9 @@ const PORT = process.env.PORT || 3000;
 const MAX_TICKETS_ABIERTOS = 3;
 const ESTADOS_COMENTABLES = ["Abierto", "Asignado", "En Progreso"];
 
-app.use(cors());
+// CORS_ORIGIN permite limitar qué frontend puede usar la API
+// (por ejemplo, la URL del sitio en Render). Si no está, se permite cualquiera.
+app.use(cors({ origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "*" }));
 app.use(express.json());
 
 // ============================================================
