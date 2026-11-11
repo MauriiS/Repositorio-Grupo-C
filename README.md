@@ -125,9 +125,9 @@ Todos los cambios (tickets nuevos, comentarios, estados, notificaciones) se guar
 
 \### Sistema publicado
 
-\- \*\*Frontend:\*\* _(completar con la URL del Static Site de Render)_
+\- \*\*Frontend:\*\* https://techsolve-front.onrender.com
 
-\- \*\*API:\*\* _(completar con la URL del Web Service de Render)_
+\- \*\*API:\*\* https://techsolve-api-as02.onrender.com
 
 Usuarios de prueba: los de la tabla del Hito 3, todos con contraseña `1234`. El backend gratis de Render se duerme si no se usa: el primer ingreso puede tardar hasta un minuto.
 
@@ -222,7 +222,7 @@ Para crearlos a mano:
 
 2. \*\*Frontend (Static Site):\*\* New → Static Site → este repo. Root Directory: `frontend`. Build Command: vacío. Publish Directory: `.`
 
-3. Copiar la URL que Render le da al backend y ponerla en `API_PRODUCCION` dentro de `frontend/js/config.js` (si no es `https://techsolve-api.onrender.com`). Al hacer push, Render vuelve a publicar el frontend solo.
+3. Copiar la URL que Render le da al backend y ponerla en `API_PRODUCCION` dentro de `frontend/js/config.js` (en nuestro caso Render le dio `https://techsolve-api-as02.onrender.com`). Al hacer push, Render vuelve a publicar el frontend solo.
 
 4. Opcional: en el backend, agregar la variable de entorno `CORS_ORIGIN` con la URL del frontend para que la API sólo acepte pedidos desde ahí.
 
