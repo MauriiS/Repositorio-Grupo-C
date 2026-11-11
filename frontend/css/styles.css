@@ -549,6 +549,60 @@ button:disabled {
 	width: auto;
 }
 
+/* Interruptor (checkbox con forma de switch) */
+.interruptor {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	color: var(--texto);
+	cursor: pointer;
+}
+
+.interruptor input {
+	appearance: none;
+	position: relative;
+	width: 42px;
+	height: 24px;
+	margin: 0;
+	border-radius: 999px;
+	background-color: var(--superficie-2);
+	border: 1px solid var(--borde);
+	cursor: pointer;
+	transition: background-color 0.15s;
+}
+
+.interruptor input::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background-color: var(--texto-suave);
+	transition: transform 0.15s, background-color 0.15s;
+}
+
+.interruptor input:checked {
+	background-color: var(--acento);
+	border-color: var(--acento);
+}
+
+.interruptor input:checked::after {
+	transform: translateX(18px);
+	background-color: var(--acento-texto);
+}
+
+.interruptor input:focus-visible {
+	outline: 2px solid var(--acento);
+	outline-offset: 2px;
+}
+
+#lista-todos-tickets {
+	margin-top: 16px;
+}
+
 /* ============================================================
    LOGIN
    ============================================================ */

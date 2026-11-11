@@ -198,6 +198,7 @@ El frontend ya no guarda datos del negocio: todo se pide a la API con `fetch()`.
 | GET | `/api/tablero` | Gerente | Indicadores, categorías por frecuencia y carga por técnico |
 | GET | `/api/tablero/criticos` | Gerente | Tickets activos de prioridad Alta |
 | GET | `/api/tablero/confidenciales` | Gerente | Tickets con información confidencial |
+| GET | `/api/tablero/tickets?estado=activos\|todos` | Gerente | Todos los tickets, sin importar la prioridad |
 | POST | `/api/reiniciar` | Gerente | Restablece los datos de prueba |
 
 \### Reglas de negocio implementadas en el backend

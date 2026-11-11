@@ -957,6 +957,59 @@ async function renderizarPageTablero() {
 			["Descripción", ticket.descripcion]
 		]));
 	});
+
+	configurarTodosLosTickets();
+}
+
+// Opción del gerente para ver todos los tickets, sin importar la prioridad.
+// La preferencia (prendido o apagado) se recuerda en el navegador.
+const PREFERENCIA_TODOS = "techsolveVerTodosLosTickets";
+
+function configurarTodosLosTickets() {
+	const interruptor = document.querySelector("#ver-todos-tickets");
+	const selectEstado = document.querySelector("#estado-todos-tickets");
+	const lista = document.querySelector("#lista-todos-tickets");
+
+	function actualizar() {
+		const visible = interruptor.checked;
+		selectEstado.hidden = !visible;
+		lista.hidden = !visible;
+		localStorage.setItem(PREFERENCIA_TODOS, visible ? "si" : "no");
+		if (visible) dibujarTodosLosTickets(selectEstado.value);
+	}
+
+	interruptor.checked = localStorage.getItem(PREFERENCIA_TODOS) === "si";
+	interruptor.addEventListener("change", actualizar);
+	selectEstado.addEventListener("change", actualizar);
+	actualizar();
+}
+
+async function dibujarTodosLosTickets(estado) {
+	const lista = document.querySelector("#lista-todos-tickets");
+
+	let tickets;
+	try {
+		tickets = await api(`/api/tablero/tickets?estado=${estado}`);
+	} catch (error) {
+		mostrarError(error.message);
+		return;
+	}
+
+	lista.innerHTML = "";
+
+	if (tickets.length === 0) {
+		lista.append(crearElemento("p", "No hay tickets para mostrar.", "tarjeta"));
+		return;
+	}
+
+	tickets.forEach(ticket => {
+		lista.append(crearTarjetaTicket(ticket, [
+			["Empleado", ticket.empleado],
+			["Categoría", ticket.categoria],
+			["Técnico", ticket.tecnico || "Sin asignar"],
+			["Abierto el", formatearFecha(ticket.fecha)]
+		]));
+	});
 }
 
 // ============================================================

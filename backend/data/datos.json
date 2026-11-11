@@ -139,14 +139,25 @@
 			"urgente",
 			"bloqueado",
 			"sin conexión",
-			"servidor"
+			"servidor",
+			"no carga",
+			"no funciona",
+			"no arranca",
+			"no prende"
 		],
 		"Media": [
 			"lento",
 			"contraseña",
 			"error",
 			"impresora",
-			"vpn"
+			"vpn",
+			"roto",
+			"rota",
+			"cargador",
+			"lenta",
+			"monitor",
+			"teclado",
+			"mouse"
 		]
 	},
 	"palabrasConfidenciales": [
