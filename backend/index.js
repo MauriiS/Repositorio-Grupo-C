@@ -389,6 +389,17 @@ app.get("/api/tablero/confidenciales", requiereSesion, requiereRol("gerente"), (
 	res.json(datos.tickets.filter(esConfidencial).map(t => formatearTicket(t, req.usuario)));
 });
 
+// Todos los tickets, sin importar la prioridad: ?estado=activos | todos
+app.get("/api/tablero/tickets", requiereSesion, requiereRol("gerente"), (req, res) => {
+	const estado = req.query.estado || "activos";
+
+	const tickets = datos.tickets
+		.filter(t => estado === "todos" || t.estado !== "Cerrado")
+		.sort((a, b) => valorPrioridad(b.prioridad) - valorPrioridad(a.prioridad) || new Date(b.fecha) - new Date(a.fecha));
+
+	res.json(tickets.map(t => formatearTicket(t, req.usuario)));
+});
+
 // Restablece los datos de prueba (útil para la demo)
 app.post("/api/reiniciar", requiereSesion, requiereRol("gerente"), (req, res) => {
 	reiniciarDatos();

@@ -70,6 +70,21 @@
 			<div id="lista-confidenciales" class="lista-tarjetas"></div>
 		</section>
 
+		<section>
+			<h2>Todos los tickets</h2>
+			<div class="filtro">
+				<label class="interruptor">
+					<input type="checkbox" id="ver-todos-tickets">
+					<span>Mostrar todos los tickets</span>
+				</label>
+				<select id="estado-todos-tickets" aria-label="Qué tickets mostrar" hidden>
+					<option value="activos">Sólo activos</option>
+					<option value="todos">Activos y cerrados</option>
+				</select>
+			</div>
+			<div id="lista-todos-tickets" class="lista-tarjetas" hidden></div>
+		</section>
+
 		<section class="zona-reinicio">
 			<button type="button" id="reiniciar-datos" class="boton boton-secundario">Restablecer datos de prueba</button>
 		</section>
